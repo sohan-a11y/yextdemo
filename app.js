@@ -45,6 +45,8 @@ const byId=Object.fromEntries(nodes.map(n=>[n.id,n]));
 const edges=pairList.map((e,i)=>({id:"edge-"+i,a:e[0],b:e[1]}));
 const adjacency=Object.fromEntries(nodes.map(n=>[n.id,[]]));
 edges.forEach(e=>{if(adjacency[e.a]&&adjacency[e.b]){adjacency[e.a].push(e.b);adjacency[e.b].push(e.a)}});
+const engineIndex=window.LKMEngine.buildIndex(nodes,adjacency);
+let sparseFrontier=[];
 let ledger=[],cycleCount=0,totalWrites=0,selectedId="signal-conflict",activeLayer="all",selectedModel="laya",latestSignal="Holiday hours conflict at Brooklyn North";
 let storyStep=0,storyTimer=null;const storyFocusId="signal-conflict";
 let rotationY=.18,rotationX=-.17,zoom=1,meshCanvases=[],projections=new WeakMap(),toastTimer=null;
@@ -57,23 +59,30 @@ function relevance(n,q){return window.LKMEngine.relevance(n,q)}
 function hashFallback(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return "fnv1a:"+("00000000"+(h>>>0).toString(16)).slice(-8)}
 async function hashText(s){try{if(window.crypto&&crypto.subtle&&window.TextEncoder){const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s));return "sha256:"+Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,"0")).join("")}}catch(e){}return hashFallback(s)}
 function showToast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove("show"),3400)}
-function save(){try{const states={};nodes.forEach(n=>states[n.id]=state(n));localStorage.setItem(STORE_KEY,JSON.stringify({version:2,states,ledger,cycleCount,totalWrites,selectedModel,latestSignal}));$("#localEngineStatus").textContent="Ready · browser-local storage";$("#localMeter").style.width="9%"}catch(e){$("#localEngineStatus").textContent="Memory only · storage unavailable";$("#localMeter").style.width="4%"}}
-function load(){try{const raw=localStorage.getItem(STORE_KEY);if(!raw)return;const x=JSON.parse(raw);if(x&&(x.version===1||x.version===2)){if(x.states)nodes.forEach(n=>{if(x.states[n.id])setState(n,x.states[n.id])});ledger=Array.isArray(x.ledger)?x.ledger:[];cycleCount=Number(x.cycleCount)||0;totalWrites=Number(x.totalWrites)||0;selectedModel=x.selectedModel||"laya";latestSignal=x.latestSignal||latestSignal}}catch(e){ledger=[];cycleCount=0;totalWrites=0}}
+function save(){try{const states={};nodes.forEach(n=>states[n.id]=state(n));localStorage.setItem(STORE_KEY,JSON.stringify({version:3,states,ledger,cycleCount,totalWrites,selectedModel,latestSignal}));$("#localEngineStatus").textContent="Ready · browser-local storage";$("#localMeter").style.width="9%"}catch(e){$("#localEngineStatus").textContent="Memory only · storage unavailable";$("#localMeter").style.width="4%"}}
+function load(){try{const raw=localStorage.getItem(STORE_KEY);if(!raw)return;const x=JSON.parse(raw);if(x&&(x.version===1||x.version===2||x.version===3)){if(x.states)nodes.forEach(n=>{if(x.states[n.id])setState(n,x.states[n.id])});ledger=Array.isArray(x.ledger)?x.ledger:[];cycleCount=Number(x.cycleCount)||0;totalWrites=Number(x.totalWrites)||0;selectedModel=x.selectedModel||"laya";latestSignal=x.latestSignal||latestSignal}}catch(e){ledger=[];cycleCount=0;totalWrites=0}}
 async function appendEvent(kind,summary,changes,meta){const parent=ledger.length?ledger[0].digest:"GENESIS";const event={id:"evt-"+Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,7),time:new Date().toISOString(),kind,summary,changes:changes||[],query:meta&&meta.query||"",reverses:meta&&meta.reverses||null,replays:meta&&meta.replays||null,metrics:meta&&meta.metrics||null,parentDigest:parent};event.digest=await hashText(JSON.stringify(event));ledger.unshift(event);if(ledger.length>250)ledger=ledger.slice(0,250);save();renderAll();return event}
 function averageNeighbor(n,prev){const ids=adjacency[n.id]||[];return ids.length?ids.reduce((s,id)=>s+(prev[id]||0),0)/ids.length:n.a}
 async function runCycle(query){
- query=(query||"").trim();if(query)latestSignal=query;
- const proposal=window.LKMEngine.transition(nodes,adjacency,query);
+ query=(query||"").trim();
+ if(query&&query!==latestSignal)sparseFrontier=[];
+ if(query)latestSignal=query;
+ const proposal=window.LKMEngine.sparseTransition(nodes,adjacency,query,engineIndex,undefined,sparseFrontier);
  const changes=proposal.changes;
- changes.forEach(ch=>setState(byId[ch.nodeId],ch.after));cycleCount++;totalWrites+=changes.length;
- await appendEvent("nca_cycle",changes.length?"Local state cycle updated "+changes.length+" of "+nodes.length+" knowledge objects":"Local state cycle ran; no state exceeded the sparse-write threshold",changes,{query:query||"local propagation",metrics:proposal.metrics});
- selectNode(selectedId);renderMeshes();showToast("Evaluated "+proposal.metrics.nodesEvaluated+" nodes; journaled "+changes.length+" sparse writes. No LLM or network request was made.");
+ changes.forEach(ch=>setState(byId[ch.nodeId],ch.after));
+ sparseFrontier=changes.map(ch=>ch.nodeId);
+ cycleCount++;totalWrites+=changes.length;
+ await appendEvent("nca_cycle",changes.length?"Sparse local cycle updated "+changes.length+" of "+nodes.length+" knowledge objects":"Sparse local cycle evaluated "+proposal.metrics.nodesEvaluated+" of "+nodes.length+" objects; no state exceeded the write threshold",changes,{query:query||"local propagation",metrics:proposal.metrics});
+ selectNode(selectedId);renderMeshes();
+ const m=proposal.metrics,badge=$("#sparseRuntimeBadge");
+ if(badge)badge.textContent="SPARSE COMPUTE · "+m.nodesEvaluated+"/"+m.totalNodes+" NODES";
+ showToast("Sparse compute evaluated "+m.nodesEvaluated+"/"+m.totalNodes+" nodes ("+m.nodesSkipped+" skipped); journaled "+changes.length+" writes. No LLM or network request was made.");
 }
 async function reverseEvent(id){
  const e=ledger.find(x=>x.id===id);if(!e||!e.changes||!e.changes.length){showToast("This event has no reversible state changes.");return}
  const applied=window.LKMEngine.applyRecordedChanges(byId,e.changes,"after","before",true);
  if(!applied.ok){showToast("Reversal blocked: "+applied.reason);return}
- const changes=applied.changes;if(!changes.length){showToast("No matching node states were available to reverse.");return}
+ const changes=applied.changes;sparseFrontier=changes.map(ch=>ch.nodeId);if(!changes.length){showToast("No matching node states were available to reverse.");return}
  totalWrites+=changes.length;await appendEvent("reversal","Compensating event reversed state changes from "+e.id,changes,{reverses:e.id});
  showToast("Reversal recorded safely. The original event remains in the journal.")
 }
@@ -81,7 +90,7 @@ async function replayEvent(id){
  const e=ledger.find(x=>x.id===id);if(!e||!e.changes||!e.changes.length){showToast("This event has no node-state changes to replay.");return}
  const applied=window.LKMEngine.applyRecordedChanges(byId,e.changes,"before","after",true);
  if(!applied.ok){showToast("Replay blocked: "+applied.reason);return}
- const changes=applied.changes;if(!changes.length){showToast("No matching node states were available to replay.");return}
+ const changes=applied.changes;sparseFrontier=changes.map(ch=>ch.nodeId);if(!changes.length){showToast("No matching node states were available to replay.");return}
  totalWrites+=changes.length;await appendEvent("replay","Replay applied the after-state from "+e.id,changes,{replays:e.id});
  showToast("Replay recorded safely as a new event; prior history is retained.")
 }
@@ -113,7 +122,7 @@ $("#heroCycleBtn").addEventListener("click",()=>runCycle($("#signalInput").value
 $("#memoryCycleBtn").addEventListener("click",()=>runCycle($("#signalInput").value));
 $("#signalForm").addEventListener("submit",e=>{e.preventDefault();const q=$("#signalInput").value.trim();if(!q){showToast("Enter a signal first.");return}runCycle(q)});
 $("#nodeSearch").addEventListener("input",renderDirectory);
-$("#resetBtn").addEventListener("click",()=>{if(!confirm("Reset the graph state and local journal in this browser? Export JSON first if you want to keep a copy."))return;localStorage.removeItem(STORE_KEY);nodes.forEach(n=>{n.a=n.baseA;n.c=n.baseC;n.u=n.baseU});ledger=[];cycleCount=0;totalWrites=0;latestSignal="Holiday hours conflict at Brooklyn North";$("#signalInput").value=latestSignal;save();renderAll();showToast("Local demo state reset.")});
+$("#resetBtn").addEventListener("click",()=>{if(!confirm("Reset the graph state and local journal in this browser? Export JSON first if you want to keep a copy."))return;localStorage.removeItem(STORE_KEY);nodes.forEach(n=>{n.a=n.baseA;n.c=n.baseC;n.u=n.baseU});sparseFrontier=[];ledger=[];cycleCount=0;totalWrites=0;latestSignal="Holiday hours conflict at Brooklyn North";$("#signalInput").value=latestSignal;save();renderAll();showToast("Local demo state reset.")});
 $("#exportBtn").addEventListener("click",()=>{const payload={format:"lkm-local-journal-v2",exportedAt:new Date().toISOString(),note:"Synthetic scenario. Browser-local export, not a tamper-proof audit log.",graph:nodes.map(n=>({id:n.id,name:n.name,type:n.type,state:state(n)})),edges,ledger};const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="living-knowledge-mesh-journal.json";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);showToast("Journal exported as JSON to your device.")});
 const modelDetails={
 laya:["Recommended role for Laya","Evaluate Laya for typed questions such as “is this record in conflict?” or “which category applies?”. It is a decision model, not a chat LLM. Its checkpoint and runtime must be measured before promising a one-gigabyte ceiling."],
@@ -129,7 +138,7 @@ function initModel(){const card=$('.model-card[data-model="'+selectedModel+'"]')
 
 const storyContent=[
 {eyebrow:"01 · SIGNAL",title:"Two sources disagree.",text:"The profile says 8 PM. The manager override says 6 PM. The mesh flags the conflict before any write-back.",proof:"Spot the issue before changing business data.",status:"STEP 1 / 4 · SIGNAL",focus:"signal-conflict",action:"Inspect signal ↗",actionType:"inspect"},
-{eyebrow:"02 · LOCAL GRAPH",title:"Only related facts light up.",text:"The signal follows links to schedules, evidence and policy. Nearby state can change without asking a language model.",proof:"Focus compute where it matters.",status:"STEP 2 / 4 · LOCAL GRAPH",focus:"signal-conflict",action:"Explore graph ↗",actionType:"mesh"},
+{eyebrow:"02 · LOCAL GRAPH",title:"Only related facts light up.",text:"The signal follows links to schedules, evidence and policy. An inverted index selects matching facts and their direct neighborhood; only that local candidate set is evaluated.",proof:"Business value: skip unrelated graph nodes on each signal cycle.",status:"STEP 2 / 4 · LOCAL GRAPH",focus:"signal-conflict",action:"Explore graph ↗",actionType:"mesh"},
 {eyebrow:"03 · SPARSE MEMORY",title:"Remember only what changed.",text:"The journal saves before-and-after values for changed nodes. A previous event remains available for replay or reversal.",proof:"A small memory footprint and a route back.",status:"STEP 3 / 4 · MEMORY",focus:"memory-ledger",action:"Run local update",actionType:"cycle"},
 {eyebrow:"04 · HUMAN CONTROL",title:"A person stays in charge.",text:"Inspect the evidence and reverse a change if needed. Production write-back remains behind explicit approval.",proof:"Automation supports the decision. It does not silently overwrite the source of truth.",status:"STEP 4 / 4 · HUMAN CONTROL",focus:"writeback-guard",action:"Open memory ↗",actionType:"memory"}
 ];
