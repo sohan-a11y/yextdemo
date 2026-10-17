@@ -133,8 +133,10 @@ function renderRows(){
  const body=$("#resultRows");body.innerHTML="";
  if(!suiteResults.length){const tr=document.createElement("tr"),td=document.createElement("td");td.colSpan=6;td.textContent="No tests run.";tr.appendChild(td);body.appendChild(tr);return}
  suiteResults.forEach((r,i)=>{
-  const tr=document.createElement("tr"),values=[CASES[i].label,expectedText(CASES[i].expected),actualText(r),r.parsed&&r.parsed.valid?"Valid":"Invalid",r.exact?"PASS":"FAIL",r.latencyMs.toFixed(1)+" ms"];
-  values.forEach((v,j)=>{const td=document.createElement("td");td.textContent=v;if((j===3&&r.parsed&&r.parsed.valid)||(j===4&&r.exact))td.className="pass";else if((j===3&&!r.parsed?.valid)||(j===4&&!r.exact))td.className="fail";tr.appendChild(td)});
+  const tr=document.createElement("tr"),values=[CASES[i].label,expectedText(CASES[i].expected),actualText(r),r.parsed&&r.parsed.valid?"Valid":"Invalid",r.exact?"PASS":"FAIL",Number(r.latencyMs||0).toFixed(1)+" ms"];
+  values.forEach((v,j)=>{const td=document.createElement("td");td.textContent=v;if((j===3&&r.parsed&&r.parsed.valid)||(j===4&&r.exact))td.className="pass";else if((j===3&&(!r.parsed||!r.parsed.valid))||(j===4&&!r.exact))td.className="fail";tr.appendChild(td)});
+  const rawTd=document.createElement("td"),details=document.createElement("details"),summary=document.createElement("summary"),pre=document.createElement("pre");
+  summary.textContent="Inspect";pre.textContent=r.text||r.error||r.parseError||"No output";details.appendChild(summary);details.appendChild(pre);rawTd.appendChild(details);tr.appendChild(rawTd);
   body.appendChild(tr);
  });
  const n=suiteResults.length,exact=suiteResults.filter(r=>r.exact).length,schema=suiteResults.filter(r=>r.parsed&&r.parsed.valid).length;
