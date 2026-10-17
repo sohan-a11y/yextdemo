@@ -27,6 +27,14 @@ No build or package install is needed. Serve the repository root over HTTP(S), t
 
 The model-lab page dynamically imports the pinned runtime CDN package and downloads weights/tokenizer from the pinned Hugging Face snapshot on demand when you press **Load model**. Expect a few hundred megabytes for the quantized model file, plus runtime and tokenizer. The first load can be much slower than cached subsequent loads.
 
+## V4 reliability fixes
+
+- Overall model-loading progress is displayed separately from per-file downloads.
+- The runtime and device selector lock after a successful load to prevent accidental duplicate model allocations; a failed WebGPU load can still be retried on CPU/WASM.
+- Response validation requires the exact four-key contract and valid normalized time values; time normalization preserves minutes instead of silently rounding them away.
+- Failed inference attempts are excluded from latency and throughput statistics instead of being recorded as zero-millisecond runs.
+- The results table includes collapsible raw output per case and the exported custom prompt is paired with the result that actually came from it.
+
 ## Evaluation protocol and interpretation
 
 The five cases are a deliberately small synthetic smoke suite, not a representative accuracy benchmark. A valid JSON schema is not the same thing as a correct decision; exact match includes the decision label, conflict boolean and normalized proposed time. Inspect raw outputs and failure cases and expand the labelled test set before considering any real workflow integration.
