@@ -28,6 +28,11 @@ This is a static website with no build step or package installation.
 
 To deploy on Vercel, use the repository root as the output directory and leave the build and install commands empty. The V1 deployment may be uploaded as a source snapshot; connect the GitHub repository separately if automatic deployments on branch pushes are desired.
 
+
+## Interactive visual explainer
+
+The executive overview starts with a four-step animated visual narrative: (1) a conflicting business signal arrives, (2) its local graph neighbourhood is highlighted, (3) materially changed states enter the sparse journal, and (4) human approval and reversible recovery remain explicit. The walkthrough can be played, paused, stepped manually or entered by selecting stages in the diagram. The “Run local update” action performs the actual local state transition; the animation does not imply that an LLM or remote service was called.
+
 ## The NCA relationship, precisely stated
 
 The V1 transition cycle is a **real executable local state-update loop inspired by neural cellular automata**, using shared hand-set weights and neighborhood summaries. It is not a trained neural cellular automaton, not a learned biological/living system, and not evidence of emergent intelligence. Its role at this stage is to make neighborhood-local state change, sparse writes and rollback inspectable and testable.
