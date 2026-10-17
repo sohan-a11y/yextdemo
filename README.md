@@ -14,7 +14,7 @@ Version branch: `v4-local-model-evaluation` (V3 remains on `v3-sparse-compute`; 
 - **Inference in the browser:** no LLM inference endpoint is called. Model and library assets are fetched from Hugging Face/jsDelivr; the browser cache is enabled for subsequent loads when retained.
 - **A five-case labelled evaluation:** same-date conflict, agreement, different effective dates, single-source insufficiency and equivalent time notation. The lab reports valid JSON/schema rate, exact decision match, median per-case latency and mean output characters per second.
 - **A custom prompt panel:** inspect the raw generation and parsed structured result. Model output is advisory and does not directly mutate the mesh graph.
-- **Resource honesty:** artifact bytes, initialization latency, output timing, browser-reported device RAM hint and origin storage estimate are surfaced separately. Peak process/RSS memory is explicitly marked unavailable from browser JavaScript.
+- **Resource honesty:** artifact bytes, initialization latency, output timing, browser-reported device RAM hint and origin storage estimate are surfaced separately. Where isolation and browser support allow it, the lab samples whole-page memory before and after load; that estimate may omit GPU allocations and is not native process peak RSS.
 - **Explicit CPU fallback:** if WebGPU fails, the page offers a manual CPU/WASM retry because that path may need a different, larger quantized artifact.
 
 ## Run locally
@@ -33,7 +33,7 @@ The five cases are a deliberately small synthetic smoke suite, not a representat
 
 Inference latency includes the generation call but not initial model loading. Model initialization time includes download/cache and runtime setup; timings vary by device/browser, cache state, quantization and WebGPU implementation. Output characters/second is a simple comparison metric, not a token/sec claim.
 
-**Peak model RAM is not measured by this browser page.** `navigator.deviceMemory`, when available, is a coarse estimate of total device RAM, and browser storage usage is an origin-wide storage estimate—not the exact model cache footprint or a runtime RAM measure. A credible sub-1 GB inference claim needs process/native memory profiling on the target hardware with a pinned model, fixed context, known concurrency and repeatable prompts.
+**Peak model RAM is not measured by this browser page.** `navigator.deviceMemory`, when available, is a coarse estimate of total device RAM, and browser storage usage is an origin-wide storage estimate—not the exact model cache footprint or a runtime RAM measure. A credible sub-1 GB inference claim needs process/native memory profiling on the target hardware with a pinned model, fixed context, known concurrency and repeatable prompts. The Vercel route for `model-lab.html` sets COOP/COEP headers to enable the optional browser memory-estimate API where supported; test model downloads and WebGPU in each target browser because cross-origin isolation can affect embedded cross-origin assets.
 
 ## Privacy and connectivity
 
