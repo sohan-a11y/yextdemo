@@ -11,12 +11,28 @@ const CASES=[
  {id:"single-source",label:"Only one source",prompt:"Business: West Gate. Target effective date: 2026-11-04. Only one source is available: an undated note says closes 7 PM. There is no second source to compare. Is there a confirmed conflict?",expected:{decision:"insufficient",conflict:false,proposed_closing_time:null}},
  {id:"equivalent-time",label:"Equivalent time formats",prompt:"Business: Cedar Square. Effective date: 2026-11-07. Published profile says closes at 18:00. Manager override for the same business and date says closes at 6 PM. These are two written formats for the same time. Do the sources disagree?",expected:{decision:"consistent",conflict:false,proposed_closing_time:"6 PM"}}
 ];
-let generator=null,loadedDevice=null,loadedDtype=null,loadMs=null,busy=false,suiteResults=[],customResult=null,transformersEnv=null;
+let generator=null,loadedDevice=null,loadedDtype=null,loadMs=null,busy=false,suiteResults=[],customResult=null,transformersEnv=null,basePageMemoryBytes=null,afterLoadPageMemoryBytes=null,highestPageMemoryBytes=null,memorySamples=[];
 function setStatus(selector,text,kind){const e=$(selector);e.textContent=text;e.className="status"+(kind?" "+kind:"")}
 function setBusy(v){busy=v;$("#loadBtn").disabled=v;$("#inferBtn").disabled=v||!generator;$("#suiteBtn").disabled=v||!generator;$("#runtimeChoice").disabled=v}
 function updateStorage(){
  if(!navigator.storage||!navigator.storage.estimate){$("#storageFact").textContent="Not available";return}
  navigator.storage.estimate().then(x=>{const mb=x.usage?x.usage/1048576:0;$("#storageFact").textContent=typeof x.usage==="number"?mb.toFixed(0)+" MB":"Not available"}).catch(()=>{$("#storageFact").textContent="Not available"});
+}
+function fmtBytes(bytes){return (bytes/1048576).toFixed(1)+" MB"}
+async function samplePageMemory(){
+ if(!window.crossOriginIsolated||!window.performance||typeof performance.measureUserAgentSpecificMemory!=="function")return null;
+ try{const x=await performance.measureUserAgentSpecificMemory();if(Number.isFinite(x.bytes)){highestPageMemoryBytes=highestPageMemoryBytes===null?x.bytes:Math.max(highestPageMemoryBytes,x.bytes);memorySamples.push({time:new Date().toISOString(),bytes:x.bytes});return x.bytes}}catch(e){}
+ return null;
+}
+function updatePageMemoryFact(currentBytes){
+ const el=$("#pageMemoryFact");
+ if(!window.crossOriginIsolated){el.textContent="Isolation unavailable";return}
+ if(!window.performance||typeof performance.measureUserAgentSpecificMemory!=="function"){el.textContent="API unavailable";return}
+ if(basePageMemoryBytes===null){el.textContent="Sampling…";return}
+ const current=currentBytes===undefined?afterLoadPageMemoryBytes:currentBytes;
+ if(current===null||current===undefined){el.textContent="Sample unavailable";return}
+ const delta=current-basePageMemoryBytes;
+ el.textContent=fmtBytes(current)+" (Δ "+(delta>=0?"+":"−")+fmtBytes(Math.abs(delta))+")";
 }
 function initDeviceFacts(){
  $("#webgpuFact").textContent=navigator.gpu?"Available":"Not available";
@@ -85,7 +101,7 @@ function normalTime(v){
  let s=String(v).trim().replace(/^["']|["']$/g,"");
  if(!s||/^(null|none|n\/a|unknown|not applicable)$/i.test(s))return null;
  let m=s.match(/\b(\d{1,2})(?::(\d{2}))?\s*(a\.?m\.?|p\.?m\.?)\b/i);
- if(m){let hr=Number(m[1]);return (hr%12||12)+" "+m[3].replace(/\./g,"").toUpperCase().replace("A","AM").replace("P","PM")}
+ if(m){let hr=Number(m[1]);const suffix=m[3].toLowerCase().startsWith("a")?"AM":"PM";return (hr%12||12)+" "+suffix}
  m=s.match(/\b(\d{1,2}):(\d{2})\b/);
  if(m){const hour=Number(m[1]),minute=Number(m[2]);if(hour<=23&&minute<=59){const hr=hour%12||12;return hr+" "+(hour>=12?"PM":"AM")}}
  return s.toUpperCase();
@@ -152,7 +168,7 @@ async function runSuite(){
  }finally{setBusy(false);$("#exportBtn").disabled=!(suiteResults.length||customResult)}
 }
 function exportResults(){
- const payload={format:"lkm-local-model-evaluation-v1",exportedAt:new Date().toISOString(),modelId:MODEL_ID,transformersJs:"4.3.1",runtime:loadedDevice,dtype:loadedDtype,modelLoadMs:loadMs,measurementNotes:{peakProcessRam:"not exposed reliably to this browser page",deviceMemory:"coarse browser-reported device RAM only",originStorage:"approximate origin storage usage, not exact model cache size",quality:"small synthetic labelled suite; not a production accuracy evaluation"},suite:suiteResults,customInference:customResult?{prompt:$("#customPrompt").value.trim(),...customResult}:null};
+ const payload={format:"lkm-local-model-evaluation-v1",exportedAt:new Date().toISOString(),modelId:MODEL_ID,transformersJs:"4.3.1",runtime:loadedDevice,dtype:loadedDtype,modelLoadMs:loadMs,measurementNotes:{peakProcessRam:"not exposed reliably to this browser page",pageMemory:"optional performance.measureUserAgentSpecificMemory samples of whole-page use; may omit GPU allocations and must not be treated as peak model RSS",deviceMemory:"coarse browser-reported device RAM only",originStorage:"approximate origin storage usage, not exact model cache size",quality:"small synthetic labelled suite; not a production accuracy evaluation"},memory:{crossOriginIsolated:!!window.crossOriginIsolated,baselineBytes:basePageMemoryBytes,afterLoadBytes:afterLoadPageMemoryBytes,highestSampledPageBytes:highestPageMemoryBytes,samples:memorySamples},suite:suiteResults,customInference:customResult?{prompt:$("#customPrompt").value.trim(),...customResult}:null};
  const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="lkm-local-model-evaluation.json";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 $("#loadBtn").addEventListener("click",()=>loadModel());
@@ -160,5 +176,5 @@ $("#retryCpuBtn").addEventListener("click",()=>{ $("#runtimeChoice").value="wasm
 $("#inferBtn").addEventListener("click",runCustom);
 $("#suiteBtn").addEventListener("click",runSuite);
 $("#exportBtn").addEventListener("click",exportResults);
-initDeviceFacts();renderRows();
+window.LKMModelLab={MODEL_ID,CASES,normalTime,parseJSON,getText};\ninitDeviceFacts();renderRows();
 })();
