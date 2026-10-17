@@ -1,69 +1,51 @@
 # Living Knowledge Mesh (LKM)
 
-**V2 — Engine Verification** builds on the minimal V1 executive walkthrough. It isolates the local transition rules into a reusable engine, adds browser-run checks and a synthetic scaling smoke benchmark, and makes reversal/replay conflict-aware.
+**V3 — Indexed Sparse Compute Preview** builds on the executive walkthrough and V2 verification suite. The engine now uses an inverted text index to select relevant graph nodes, expands that set to its local neighborhood, and evaluates only those candidates. A dense reference implementation remains available for comparisons.
 
 Live demo: [living-knowledge-mesh.vercel.app](https://living-knowledge-mesh.vercel.app)  
-Engine checks: [living-knowledge-mesh.vercel.app/engine-tests.html](https://living-knowledge-mesh.vercel.app/engine-tests.html)  
+Engine checks and dense-versus-sparse benchmark: [living-knowledge-mesh.vercel.app/engine-tests.html](https://living-knowledge-mesh.vercel.app/engine-tests.html)  
 Repository: https://github.com/sohan-a11y/yextdemo  
-Version branch: `v1-executive-experience` (iterative work is isolated on this branch; portfolio repo is untouched)
+Version branch: `v3-sparse-compute` (V1/V2 source remains on `v1-executive-experience`; portfolio repository remains untouched)
 
-## What V2 adds
+## What V3 adds
 
-- **Reusable transition module:** `engine.js` is the single source of truth for relevance scoring, deterministic neighborhood updates and sparse-write thresholding.
-- **Browser-run verification:** `engine-tests.html` runs the same module used by the product demo. The suite covers deterministic output, non-mutation, bounded states, thresholds, duplicate writes, isolated nodes, invalid inputs and apply/reverse/replay behaviour.
-- **Stale-change guard:** reversal and replay validate the expected current state before applying a batch. A stale or conflicting batch fails atomically instead of silently overwriting newer changes.
-- **Synthetic scaling smoke benchmark:** checks 32, 128, 512 and 2,048 node fixtures and reports nodes evaluated, neighbor references, writes and local timing.
-- **Transparent counters:** the UI distinguishes nodes evaluated from sparse journal writes. This engine still performs a full sweep; sparse writes do not yet mean sparse computation.
-- **Backward-compatible browser state:** V1 localStorage journal/state can be read by V2 and is saved in the newer schema after use.
-- **Minimal product walkthrough:** the main landing view stays focused on the four-step visual story. Use **Engine tests** in the top navigation for verification details.
+- **One-time local index:** exact-token and four-character prefix postings are built for graph text and adjacency. Rebuild the index if node text or graph topology changes.
+- **Candidate-first compute:** a signal selects matching nodes, then includes their one-hop neighborhood. Nodes changed in the previous cycle can provide a frontier for another local propagation step.
+- **Real skipped computation:** nodes outside the candidate set are not passed through the transition equations. They remain unchanged for that cycle.
+- **Dense reference path:** the previous all-node calculation remains in the engine for deterministic comparisons and debugging.
+- **Transparent counters:** the UI reports evaluated nodes out of total graph nodes; the verification page shows nodes evaluated, nodes skipped, writes and repeat timings for both paths.
+- **V2 safety retained:** deterministic bounded-state transitions, sparse journal writes, strict stale-state guards and conflict-safe reversal/replay remain available.
 
 ## Run locally
 
-This is a static website with no build step or dependency installation.
+This is a static website with no dependency installation or build step.
 
-1. Clone the repository and check out `v1-executive-experience`.
-2. Serve the repository root using a static server. For example: `python -m http.server 8000`.
-3. Open `http://localhost:8000` for the walkthrough and `http://localhost:8000/engine-tests.html` for engine checks.
-4. The checks run in the browser on page load and can be repeated with the button.
+1. Clone the repository and check out `v3-sparse-compute`.
+2. Serve the repository root using a static server, such as `python -m http.server 8000`.
+3. Open `http://localhost:8000/` for the guided walkthrough and `http://localhost:8000/engine-tests.html` for checks and the synthetic benchmark.
 
-A local web server is recommended rather than opening files directly, to keep browser behaviours consistent.
+A local web server is recommended rather than opening the files directly.
 
-## Engine and test scope
+## How sparse compute works
 
-The transition takes a graph state, adjacency map and text signal, calculates the next state for every node, and returns only changes whose combined activation/confidence/uncertainty delta meets the configured threshold (`0.018`). It does not mutate the input graph while proposing changes.
+The graph's text postings and neighborhood index are built once. Each signal token looks up matching node IDs instead of comparing the signal with every node's text. The engine expands those matches to direct neighbors (and optionally nodes on the previous change frontier), then runs state-transition equations only for that candidate set. A node whose ID is not a candidate is not evaluated in that cycle.
 
-The replay/reversal helper checks all node states against the expected side of the event before mutating anything. If a node has changed since the event, the operation is blocked atomically. This is a conflict-safety guard, not a full event-sourcing platform or a guarantee that every historical event can always be reversed.
+Steady-state candidate selection is proportional to the relevant posting lists and candidate neighborhoods, rather than an unconditional full graph pass. Index creation itself still costs O(V + E + tokens). Candidate selection is intentionally an approximation of the dense reference: nodes outside the local candidate region do not receive a state update in that cycle. It is not mathematically equivalent to evaluating every node. The browser benchmark uses synthetic graphs and reports actual counts and timings observed in that browser; dense or sparse timings may vary by graph and device. Index-build time, peak resident RAM and production workload latency are not claimed by the steady-state benchmark.
 
-The benchmark uses synthetic fixtures and in-browser timing. It is a scaling smoke test, not a formal performance benchmark: no peak resident RAM, production-latency, model-inference, or real-world workload claim is made. The timing result may vary with browser/device, tab activity and thermal state. The benchmark graph is synthetic and is not customer data.
+## Precise status and limitations
 
-## Precisely what this is — and is not
+The transition is a **local deterministic state-update loop inspired by neural cellular automata**, with shared hand-set weights and neighborhood summaries. It is not a trained NCA, learned organism, or evidence of emergent intelligence.
 
-The transition is a **real executable local state-update loop inspired by neural cellular automata**, using shared hand-set weights and neighborhood summaries. It is not a trained neural cellular automaton, not a learned biological/living system, and not evidence of emergent intelligence. The update evaluates every graph node on each cycle; the threshold reduces recorded writes only.
+The graph represents synthetic business facts. There is no Yext API, production source, remote graph, production write-back, or real customer data. The journal remains browser-local, and event digests are consistency aids—not tamper-proof audit evidence. The benchmark is a scaling smoke test, not a formal performance study.
 
-The graph nodes represent synthetic business facts and system concepts. The transition is deterministic for a given current state and signal. Event IDs, timestamps and cryptographic digests are separate journal metadata.
-
-## LLM and sparse-memory status
-
-No LLM weights are downloaded or called. Laya, Jev, SmolLM2 360M and Qwen3 0.6B are candidate/policy choices, not connected inference engines. Selecting one only saves a local UI setting.
-
-The journal is stored in the current browser profile. SHA-256 digests are created where Web Crypto is available; a lightweight FNV-1a fallback is used otherwise. This is a local consistency aid, not a tamper-proof or independently verified audit trail. Browser data is not shared across devices or users and may be cleared by the browser.
-
-The always-on graph update and journal require no LLM runtime. V2 does not publish measured peak RAM or latency results on target hardware. Quantized model file size is not peak process RAM; a sub-1 GB inference target still needs a pinned checkpoint, tokenizer/runtime, context size, concurrency, CPU and repeatable memory benchmark.
-
-## Production gaps
-
-- No Yext API, production data source or remote graph is connected.
-- No model weights, LLM API, remote inference or model downloads are connected.
-- No external write-back occurs; these are local synthetic state changes only.
-- Event digests are not a tamper-proof audit mechanism.
-- Tests run on demand in the browser; CI integration is not yet added.
-- Real trained NCA dynamics, sparse-compute scheduling, measured RAM, access control, durable shared storage, connectors and security review remain future work.
+**No LLM is connected in V3.** Laya, Jev, SmolLM2 360M and Qwen3 0.6B remain candidate choices; model selection in the UI only changes a local setting. No weights are downloaded, no external API is called, and no measured sub-1 GB inference claim is made. Model integration requires a pinned checkpoint, tokenizer/runtime, task-specific accuracy tests and repeatable peak-memory measurements on target hardware.
 
 ## Roadmap
 
-- **V1 — Executive walkthrough:** visual story, interactive canvas mesh, local journal and candidate model choices.
-- **V2 — Engine verification:** isolated engine module, deterministic browser checks, synthetic timing smoke benchmark, and conflict-safe reversal/replay.
-- **V3 — Sparse compute and model integration:** measured candidate model, evidence-grounded structured outputs, and profiling of a genuinely sparse update strategy.
-- **V4 — Production hardening:** CI tests, shared storage, authentication, authorized connectors, privacy review, and repeatable evaluation.
+- **V1 — Executive walkthrough:** four-step visual story, graph view, local journal and candidate model cards.
+- **V2 — Engine verification:** isolated deterministic engine, browser tests and conflict-aware reversal/replay.
+- **V3 — Indexed sparse compute (current):** token postings, neighborhood candidate scheduling, frontier propagation and dense-versus-sparse smoke benchmarks.
+- **V4 — Local model evaluation:** select and pin a small model/runtime, measure peak memory and latency, and compare typed model outputs against rules and test fixtures.
+- **V5 — Production hardening:** CI tests, authorized connectors, access controls, durable shared storage, privacy/security review and repeatable evaluation.
 
 This is an independent research concept, not an official Yext product or endorsement.
