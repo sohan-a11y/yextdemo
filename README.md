@@ -29,7 +29,7 @@ The model-lab page dynamically imports the pinned runtime CDN package and downlo
 
 ## V4 reliability fixes
 
-- Overall model-loading progress is displayed separately from per-file downloads.
+- Overall model-loading progress is displayed separately from per-file downloads. The load control locks after success, and result export is disabled while a load/inference run is in progress.
 - The runtime and device selector lock after a successful load to prevent accidental duplicate model allocations; a failed WebGPU load can still be retried on CPU/WASM.
 - Response validation requires the exact four-key contract and valid normalized time values; time normalization preserves minutes instead of silently rounding them away.
 - Failed inference attempts are excluded from latency and throughput statistics instead of being recorded as zero-millisecond runs.
