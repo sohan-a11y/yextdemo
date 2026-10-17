@@ -10,7 +10,7 @@ Version branch: `v4-local-model-evaluation` (V3 remains on `v3-sparse-compute`; 
 
 ## What V4 adds
 
-- **Real model weights and inference:** `onnx-community/SmolLM2-360M-Instruct-ONNX` through Transformers.js `4.3.1`. The page uses the model's published q4f16 artifact (~272 MB) for WebGPU or q4 artifact (~386 MB) for CPU/WASM.
+- **Real model weights and inference:** `onnx-community/SmolLM2-360M-Instruct-ONNX` at snapshot `fe7c7db4c8921c9e3fa1c65cfd296fb3b1b1a8f9`, through Transformers.js `4.3.1`. The page uses the model's published q4f16 artifact (~272 MB) for WebGPU or q4 artifact (~386 MB) for CPU/WASM.
 - **Inference in the browser:** no LLM inference endpoint is called. Model and library assets are fetched from Hugging Face/jsDelivr; the browser cache is enabled for subsequent loads when retained.
 - **A five-case labelled evaluation:** same-date conflict, agreement, different effective dates, single-source insufficiency and equivalent time notation. The lab reports valid JSON/schema rate, exact decision match, median per-case latency and mean output characters per second.
 - **A custom prompt panel:** inspect the raw generation and parsed structured result. Model output is advisory and does not directly mutate the mesh graph.
@@ -25,7 +25,7 @@ No build or package install is needed. Serve the repository root over HTTP(S), t
 - `/engine-tests.html` — sparse-engine checks and dense-vs-sparse smoke benchmark
 - `/model-lab.html` — load the model, try a prompt, run the labelled suite and export results
 
-The model-lab page dynamically imports the pinned runtime CDN package and downloads weights/tokenizer from Hugging Face on demand when you press **Load model**. Expect a few hundred megabytes for the quantized model file, plus runtime and tokenizer. The first load can be much slower than cached subsequent loads.
+The model-lab page dynamically imports the pinned runtime CDN package and downloads weights/tokenizer from the pinned Hugging Face snapshot on demand when you press **Load model**. Expect a few hundred megabytes for the quantized model file, plus runtime and tokenizer. The first load can be much slower than cached subsequent loads.
 
 ## Evaluation protocol and interpretation
 
