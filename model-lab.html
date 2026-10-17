@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#071019">
+<meta name="description" content="Run and evaluate SmolLM2-360M-Instruct in your browser with quantized ONNX weights.">
+<title>Local Model Lab · Living Knowledge Mesh</title>
+<style>
+:root{color-scheme:dark;--bg:#071019;--panel:#0e1b28;--line:#203846;--text:#eef7fa;--muted:#9bb1bf;--cyan:#7be5e2;--mint:#a2f2c4;--amber:#f7c579;--red:#ff949b;--sans:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;--mono:ui-monospace,SFMono-Regular,Consolas,monospace}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 60% -10%,#16415366,transparent 38%),var(--bg);color:var(--text);font:14px/1.55 var(--sans)}a{color:var(--cyan);text-decoration:none}button,select,textarea{font:inherit}button{cursor:pointer}button:focus-visible,a:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--cyan);outline-offset:3px}
+.top{height:58px;display:flex;justify-content:space-between;align-items:center;padding:0 max(16px,calc((100vw - 1060px)/2));border-bottom:1px solid #1a303d;background:#08131dcc}.brand{font-size:11px;font-weight:900;letter-spacing:.1em;color:var(--text)}.top a:last-child{font-size:11px}
+main{max-width:1060px;margin:auto;padding:27px 18px 42px}.eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:.15em;color:var(--muted);font-weight:850}.heading{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;margin-bottom:18px}.heading h1{font-size:clamp(26px,4vw,37px);letter-spacing:-.06em;line-height:1.08;margin:8px 0 9px}.heading p{color:var(--muted);font-size:12px;max-width:710px;margin:0;line-height:1.8}.tag{white-space:nowrap;border:1px solid #31564e;background:#112822;color:var(--mint);border-radius:7px;padding:7px 9px;font:9px var(--mono)}
+.panel{border:1px solid #203846;border-radius:14px;background:linear-gradient(150deg,#10202c,#0b1722);padding:17px;min-width:0}.grid{display:grid;grid-template-columns:minmax(0,1.12fr) minmax(280px,.88fr);gap:12px;margin-bottom:12px}.panel h2{font-size:13px;letter-spacing:-.02em;margin:0 0 6px}.desc{font-size:10px;line-height:1.7;color:var(--muted);margin:0 0 12px}.controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.btn{display:inline-flex;justify-content:center;align-items:center;gap:7px;border:1px solid #2a4352;border-radius:8px;padding:9px 12px;background:#10202c;color:var(--text);font-size:10px;font-weight:800}.btn:hover{border-color:#507587}.btn.primary{background:linear-gradient(115deg,#a8f4c8,#7ce2e2);color:#07161e;border-color:#99ecd6}.btn:disabled{opacity:.48;cursor:not-allowed}.select{background:#091721;border:1px solid #2a4351;border-radius:8px;padding:9px 11px;color:var(--text);font-size:10px}.status{margin-top:12px;padding:10px 11px;border:1px solid #243e4b;border-radius:8px;background:#091721;color:#a9c0cc;font-size:10px;min-height:39px;overflow-wrap:anywhere}.status.good{border-color:#31564e;color:var(--mint)}.status.warn{border-color:#59472c;color:var(--amber)}.status.bad{border-color:#633840;color:var(--red)}
+.progress{height:4px;background:#203440;border-radius:4px;overflow:hidden;margin-top:8px}.progress span{display:block;width:0;height:100%;background:linear-gradient(90deg,#81e9d9,#a2f2c4);transition:width .2s}
+.specs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.spec{border:1px solid #1d3441;background:#0a1721;border-radius:9px;padding:11px}.spec small{display:block;color:var(--muted);font-size:9px}.spec strong{display:block;font-size:15px;letter-spacing:-.03em;margin-top:4px;overflow-wrap:anywhere}.hint{font-size:9px;line-height:1.75;color:#8198a7;margin:10px 0 0}
+textarea{display:block;width:100%;min-height:135px;resize:vertical;background:#08151f;border:1px solid #2a4351;border-radius:9px;padding:11px;color:var(--text);font:11px/1.65 var(--mono)}.output{white-space:pre-wrap;overflow-wrap:anywhere;min-height:76px;max-height:380px;overflow:auto;background:#08151f;border:1px solid #1e3643;border-radius:9px;padding:12px;font:10px/1.65 var(--mono);color:#c7dde4}.small-title{font-size:10px;color:var(--muted);margin:12px 0 7px}.metric-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:12px 0}.metric{border:1px solid #1e3643;background:#0a1721;border-radius:9px;padding:10px}.metric strong{display:block;font-size:20px;letter-spacing:-.04em}.metric span{display:block;color:var(--muted);font-size:9px;margin-top:3px}
+.table-wrap{overflow-x:auto;border:1px solid #1e3643;border-radius:9px}table{border-collapse:collapse;width:100%;font-size:10px;min-width:680px}th{background:#0a1721;color:#8fa8b7;text-align:left;text-transform:uppercase;letter-spacing:.08em;font-size:8px;padding:10px;border-bottom:1px solid #203846}td{padding:10px;border-bottom:1px solid #192d3a;vertical-align:top}tr:last-child td{border-bottom:0}.pass{color:var(--mint)}.fail{color:var(--red)}.neutral{color:var(--amber)}td details summary{cursor:pointer;color:var(--cyan);font-size:9px}td details pre{white-space:pre-wrap;overflow-wrap:anywhere;max-width:360px;max-height:220px;overflow:auto;font:9px/1.55 var(--mono);color:#bed2db}
+.privacy{display:flex;align-items:flex-start;gap:9px;border:1px solid #2b493e;background:#0d211e;border-radius:10px;padding:12px;margin-top:12px}.privacy strong{display:block;font-size:10px}.privacy p{font-size:9px;color:#a7c3c0;margin:3px 0 0;line-height:1.7}.foot{font-size:9px;color:#7b929f;margin-top:14px;line-height:1.8}.hide{display:none!important}
+@media(max-width:760px){main{padding:20px 12px 28px}.grid{grid-template-columns:1fr}.heading{display:block}.heading .tag{display:inline-block;margin-top:12px}.metric-row{grid-template-columns:repeat(2,minmax(0,1fr))}.panel{padding:14px}.top{padding:0 13px}}
+</style>
+</head>
+<body>
+<header class="top"><a class="brand" href="index.html">LKM / LOCAL MODEL LAB</a><a href="index.html">← Back to walkthrough</a></header>
+<main>
+ <div class="heading"><div><div class="eyebrow">V4 · Real model evaluation</div><h1>Run the model.<br>Measure the trade-offs.</h1><p>This page loads an actual quantized SmolLM2-Instruct ONNX model and runs inference in this browser. First load needs internet for the runtime and weights; subsequent loads may use the browser cache.</p></div><div class="tag" id="readyTag">MODEL NOT LOADED</div></div>
+ <div class="grid">
+  <section class="panel">
+   <h2>01 / Load the local model</h2>
+   <p class="desc">SmolLM2 360M Instruct · ONNX · Apache-2.0 model family. Weights are fetched from Hugging Face and then inference runs in this browser tab, not on an LLM server.</p>
+   <div class="controls"><label class="eyebrow" for="runtimeChoice">Runtime</label><select id="runtimeChoice" class="select"><option value="auto">Auto · WebGPU if available</option><option value="webgpu">WebGPU · q4f16</option><option value="wasm">CPU/WASM · q4</option></select><button id="loadBtn" class="btn primary">Load model</button><button id="retryCpuBtn" class="btn hide">Retry on CPU/WASM</button><button id="diagnosticBtn" class="btn">Check setup</button></div>
+   <div id="loadStatus" class="status" role="status" aria-live="polite">Ready to load. Expect approximately 272 MB of q4f16 weights on WebGPU or 386 MB of q4 weights on CPU/WASM, plus tokenizer/runtime and inference overhead.</div>
+   <div class="progress"><span id="loadProgress"></span></div>
+   <div id="diagnosticStatus" class="status" role="status" aria-live="polite">Setup checks have not run. Checks use small metadata requests and do not download model weights.</div>
+   <pre id="diagnosticDetails" class="output hide" aria-label="Browser setup diagnostics"></pre>
+   <div class="hint">The loading timer includes download, cache access and model initialization. A failed WebGPU attempt can require a separate CPU quantization download if you switch runtimes.</div>
+  </section>
+  <section class="panel">
+   <h2>Model & device facts</h2><p class="desc">Artifact size is not peak runtime RAM. Where supported, this page samples total page memory. That estimate can omit GPU allocations and is not native process peak RAM.</p>
+   <div class="specs">
+    <div class="spec"><small>Parameters</small><strong>360M</strong></div>
+    <div class="spec"><small>GPU artifact (q4f16)</small><strong>272 MB</strong></div>
+    <div class="spec"><small>CPU artifact (q4)</small><strong>386 MB</strong></div>
+    <div class="spec"><small>WebGPU API</small><strong id="webgpuFact">Checking…</strong></div>
+    <div class="spec"><small>Approx. device RAM hint</small><strong id="deviceRamFact">Not exposed</strong></div>
+    <div class="spec"><small>Browser-origin storage used</small><strong id="storageFact">Not available</strong></div>
+    <div class="spec"><small>Page memory estimate</small><strong id="pageMemoryFact">Checking…</strong></div>
+   </div>
+   <p class="hint">The device RAM hint is a coarse browser-reported estimate, not model memory usage. Storage usage includes the origin's other stored data and is not the model's exact cache size.</p>
+  </section>
+ </div>
+ <div class="grid">
+  <section class="panel">
+   <h2>02 / Try a real inference</h2>
+   <p class="desc">Edit the evidence prompt or keep the sample. The small model may return malformed JSON or make a wrong decision; inspect the response instead of assuming it is authoritative.</p>
+   <textarea id="customPrompt" aria-label="Input to local model">Business: Brooklyn North
+Effective date: 2026-10-31
+Published business profile: closes at 8 PM on 2026-10-31.
+Manager override: closes at 6 PM on 2026-10-31.
+Classify whether these comparable sources conflict. Do not choose which source is authoritative.</textarea>
+   <div class="controls" style="margin-top:9px"><button id="inferBtn" class="btn primary" disabled>Run local inference</button><span class="hint" style="margin:0">Maximum 112 new tokens · deterministic decoding · one model load per tab</span></div>
+   <div class="small-title">Raw model response</div><pre id="customOutput" class="output">Load the model to enable inference.</pre>
+   <div class="small-title">Parsed structured result</div><pre id="customParsed" class="output">A JSON result will appear here if the model returns parseable output.</pre>
+   <div id="customStatus" class="status">No inference run yet.</div>
+  </section>
+  <section class="panel">
+   <h2>03 / Evaluate decision quality</h2>
+   <p class="desc">Run five synthetic labelled cases. Exact match checks the decision, conflict flag and proposed time; valid JSON alone does not count as a correct decision.</p>
+   <div class="controls"><button id="suiteBtn" class="btn primary" disabled>Run 5-case suite</button><button id="exportBtn" class="btn" disabled>Export results JSON</button></div>
+   <div class="metric-row">
+    <div class="metric"><strong id="metricExact">—</strong><span>Exact decisions</span></div>
+    <div class="metric"><strong id="metricSchema">—</strong><span>Valid schema</span></div>
+    <div class="metric"><strong id="metricLatency">—</strong><span>Median latency</span></div>
+    <div class="metric"><strong id="metricRate">—</strong><span>Combined output chars/s</span></div>
+   </div>
+   <div id="suiteStatus" class="status">Load the model, then run the suite. Timings are specific to this browser and device.</div>
+  </section>
+ </div>
+ <section class="panel">
+  <h2>Evaluation results</h2><p class="desc">Ground truth is intentionally narrow and synthetic. These checks test evidence triage behaviour; they do not establish general model capability or readiness for production data.</p>
+  <div class="table-wrap"><table><thead><tr><th>Case</th><th>Expected</th><th>Model result</th><th>Schema</th><th>Exact</th><th>Latency</th><th>Raw output</th></tr></thead><tbody id="resultRows"><tr><td colspan="7">No tests run.</td></tr></tbody></table></div>
+ </section>
+ <div class="privacy"><div style="font-size:16px;color:var(--mint)">◎</div><div><strong>Local inference, external asset download</strong><p>Test prompts are processed in this browser tab; no LLM inference API is called by this page. The JavaScript runtime comes from jsDelivr and model/tokenizer assets come from Hugging Face on first load. Model caching is enabled, but browsers can evict cached files. Do not use confidential or regulated data until the network, cache and privacy setup has been reviewed.</p></div></div>
+ <div class="foot">Model: <a href="https://huggingface.co/onnx-community/SmolLM2-360M-Instruct-ONNX" target="_blank" rel="noreferrer">onnx-community/SmolLM2-360M-Instruct-ONNX ↗</a> · Runtime: <a href="https://huggingface.co/docs/transformers.js" target="_blank" rel="noreferrer">Transformers.js ↗</a> · Pinned snapshot <code>fe7c7db4c8921c9e3fa1c65cfd296fb3b1b1a8f9</code> · <span id="runtimeFact">Runtime has not loaded.</span><br>Limit: JavaScript cannot reliably report peak RSS/model RAM. A credible sub-1 GB claim still requires native/process-level profiling on the actual target device.</div>
+</main>
+<script type="importmap">
+{
+  "imports": {
+    "@huggingface/transformers": "https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.3.1"
+  }
+}
+</script>
+<script src="model-lab.js"></script>
+</body></html>

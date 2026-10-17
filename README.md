@@ -1,51 +1,70 @@
 # Living Knowledge Mesh (LKM)
 
-**V3 — Indexed Sparse Compute Preview** builds on the executive walkthrough and V2 verification suite. The engine now uses an inverted text index to select relevant graph nodes, expands that set to its local neighborhood, and evaluates only those candidates. A dense reference implementation remains available for comparisons.
+**V4 — Local Model Evaluation** adds a real in-browser inference path to the V3 indexed sparse-compute preview. The separate Local Model Lab loads the quantized ONNX build of SmolLM2-360M-Instruct using Transformers.js, tries WebGPU with q4f16 where selected/available, and supports an explicit CPU/WASM q4 path. Inference is local to the browser tab after runtime and model assets are downloaded.
 
 Live demo: [living-knowledge-mesh.vercel.app](https://living-knowledge-mesh.vercel.app)  
-Engine checks and dense-versus-sparse benchmark: [living-knowledge-mesh.vercel.app/engine-tests.html](https://living-knowledge-mesh.vercel.app/engine-tests.html)  
+Local Model Lab: [living-knowledge-mesh.vercel.app/model-lab.html](https://living-knowledge-mesh.vercel.app/model-lab.html)  
+Engine checks: [living-knowledge-mesh.vercel.app/engine-tests.html](https://living-knowledge-mesh.vercel.app/engine-tests.html)  
 Repository: https://github.com/sohan-a11y/yextdemo  
-Version branch: `v3-sparse-compute` (V1/V2 source remains on `v1-executive-experience`; portfolio repository remains untouched)
+Version branch: `v4-local-model-evaluation` (V3 remains on `v3-sparse-compute`; portfolio repository remains untouched)
 
-## What V3 adds
+## What V4 adds
 
-- **One-time local index:** exact-token and four-character prefix postings are built for graph text and adjacency. Rebuild the index if node text or graph topology changes.
-- **Candidate-first compute:** a signal selects matching nodes, then includes their one-hop neighborhood. Nodes changed in the previous cycle can provide a frontier for another local propagation step.
-- **Real skipped computation:** nodes outside the candidate set are not passed through the transition equations. They remain unchanged for that cycle.
-- **Dense reference path:** the previous all-node calculation remains in the engine for deterministic comparisons and debugging.
-- **Transparent counters:** the UI reports evaluated nodes out of total graph nodes; the verification page shows nodes evaluated, nodes skipped, writes and repeat timings for both paths.
-- **V2 safety retained:** deterministic bounded-state transitions, sparse journal writes, strict stale-state guards and conflict-safe reversal/replay remain available.
+- **Real model weights and inference:** `onnx-community/SmolLM2-360M-Instruct-ONNX` at snapshot `fe7c7db4c8921c9e3fa1c65cfd296fb3b1b1a8f9`, through Transformers.js `4.3.1`. The page uses the model's published q4f16 artifact (~272 MB) for WebGPU or q4 artifact (~386 MB) for CPU/WASM.
+- **Inference in the browser:** no LLM inference endpoint is called. Model and library assets are fetched from Hugging Face/jsDelivr; the browser cache is enabled for subsequent loads when retained.
+- **A five-case labelled evaluation:** same-date conflict, agreement, different effective dates, single-source insufficiency and equivalent time notation. The lab reports valid JSON/schema rate, exact decision match, median per-case latency and mean output characters per second.
+- **A custom prompt panel:** inspect the raw generation and parsed structured result. Model output is advisory and does not directly mutate the mesh graph.
+- **Resource honesty:** artifact bytes, initialization latency, output timing, browser-reported device RAM hint and origin storage estimate are surfaced separately. Where isolation and browser support allow it, the lab samples whole-page memory before and after load; that estimate may omit GPU allocations and is not native process peak RSS.
+- **Explicit CPU fallback:** if WebGPU fails, the page offers a manual CPU/WASM retry because that path may need a different, larger quantized artifact.
 
 ## Run locally
 
-This is a static website with no dependency installation or build step.
+No build or package install is needed. Serve the repository root over HTTP(S), then open:
 
-1. Clone the repository and check out `v3-sparse-compute`.
-2. Serve the repository root using a static server, such as `python -m http.server 8000`.
-3. Open `http://localhost:8000/` for the guided walkthrough and `http://localhost:8000/engine-tests.html` for checks and the synthetic benchmark.
+- `/` — executive walkthrough and mesh
+- `/engine-tests.html` — sparse-engine checks and dense-vs-sparse smoke benchmark
+- `/model-lab.html` — load the model, try a prompt, run the labelled suite and export results
 
-A local web server is recommended rather than opening the files directly.
+The model-lab page dynamically imports the pinned runtime CDN package and downloads weights/tokenizer from the pinned Hugging Face snapshot on demand when you press **Load model**. Expect a few hundred megabytes for the quantized model file, plus runtime and tokenizer. The first load can be much slower than cached subsequent loads.
 
-## How sparse compute works
+## V4 reliability fixes
 
-The graph's text postings and neighborhood index are built once. Each signal token looks up matching node IDs instead of comparing the signal with every node's text. The engine expands those matches to direct neighbors (and optionally nodes on the previous change frontier), then runs state-transition equations only for that candidate set. A node whose ID is not a candidate is not evaluated in that cycle.
+- Overall model-loading progress is displayed separately from per-file downloads. The load control locks after success, and result export is disabled while a load/inference run is in progress.
+- The runtime and device selector lock after a successful load to prevent accidental duplicate model allocations; a failed WebGPU load can still be retried on CPU/WASM.
+- Model generation is constrained with `@huggingface/transformers-structured-output@4.3.1` and a JSON Schema: exactly four keys, a fixed decision enum, a boolean conflict flag, a string reason, and a proposed time restricted to normalized times found in the prompt (or `null`). This addresses malformed JSON at generation time; semantic decision accuracy still requires evaluation.
+- The browser import map makes the structured-output package reuse the same pinned Transformers.js 4.3.1 module as the loaded model runtime.
+- Response validation independently requires the exact four-key contract and valid normalized time values; time normalization preserves minutes instead of silently rounding them away.
+- Failed inference attempts are excluded from latency and throughput statistics instead of being recorded as zero-millisecond runs.
+- The results table includes collapsible raw output per case and the exported custom prompt is paired with the result that actually came from it.
 
-Steady-state candidate selection is proportional to the relevant posting lists and candidate neighborhoods, rather than an unconditional full graph pass. Index creation itself still costs O(V + E + tokens). Candidate selection is intentionally an approximation of the dense reference: nodes outside the local candidate region do not receive a state update in that cycle. It is not mathematically equivalent to evaluating every node. The browser benchmark uses synthetic graphs and reports actual counts and timings observed in that browser; dense or sparse timings may vary by graph and device. Index-build time, peak resident RAM and production workload latency are not claimed by the steady-state benchmark.
+## Evaluation protocol and interpretation
+
+The five cases are a deliberately small synthetic smoke suite, not a representative accuracy benchmark. A valid JSON schema is not the same thing as a correct decision; exact match includes the decision label, conflict boolean and normalized proposed time. Inspect raw outputs and failure cases and expand the labelled test set before considering any real workflow integration.
+
+Inference latency includes the generation call but not initial model loading. Model initialization time includes download/cache and runtime setup; timings vary by device/browser, cache state, quantization and WebGPU implementation. Output characters/second is a simple comparison metric, not a token/sec claim.
+
+**Peak model RAM is not measured by this browser page.** `navigator.deviceMemory`, when available, is a coarse estimate of total device RAM, and browser storage usage is an origin-wide storage estimate—not the exact model cache footprint or a runtime RAM measure. A credible sub-1 GB inference claim needs process/native memory profiling on the target hardware with a pinned model, fixed context, known concurrency and repeatable prompts. The Vercel route for `model-lab.html` sets COOP/COEP headers to enable the optional browser memory-estimate API where supported; test model downloads and WebGPU in each target browser because cross-origin isolation can affect embedded cross-origin assets.
+
+## Privacy and connectivity
+
+Prompt text is fed to the local inference runtime. The page does not send prompts to an LLM API. Initial use requires downloading the JavaScript runtime from jsDelivr and model/tokenizer assets from Hugging Face. Cached files can be removed by browser storage management, so offline re-opening is not guaranteed until you have tested it on the target browser. Do not use confidential or regulated inputs until browser cache, network behavior and organizational policy have been reviewed.
 
 ## Precise status and limitations
 
-The transition is a **local deterministic state-update loop inspired by neural cellular automata**, with shared hand-set weights and neighborhood summaries. It is not a trained NCA, learned organism, or evidence of emergent intelligence.
-
-The graph represents synthetic business facts. There is no Yext API, production source, remote graph, production write-back, or real customer data. The journal remains browser-local, and event digests are consistency aids—not tamper-proof audit evidence. The benchmark is a scaling smoke test, not a formal performance study.
-
-**No LLM is connected in V3.** Laya, Jev, SmolLM2 360M and Qwen3 0.6B remain candidate choices; model selection in the UI only changes a local setting. No weights are downloaded, no external API is called, and no measured sub-1 GB inference claim is made. Model integration requires a pinned checkpoint, tokenizer/runtime, task-specific accuracy tests and repeatable peak-memory measurements on target hardware.
+- SmolLM2 is connected only to the separate **Local Model Lab**. The existing walkthrough's graph update does **not** call the model or automatically apply its suggestions.
+- The knowledge graph and labelled evaluation cases are synthetic.
+- V3's local sparse scheduler is an approximation to dense propagation; nodes outside the candidate region are intentionally not evaluated in that cycle.
+- The deterministic state-update loop is inspired by neural cellular automata but is not a trained NCA or evidence of emergent intelligence.
+- No Yext API, production data connector, shared storage, production write-back or tamper-proof event log is configured.
+- This is not an official Yext product or endorsement.
 
 ## Roadmap
 
-- **V1 — Executive walkthrough:** four-step visual story, graph view, local journal and candidate model cards.
-- **V2 — Engine verification:** isolated deterministic engine, browser tests and conflict-aware reversal/replay.
-- **V3 — Indexed sparse compute (current):** token postings, neighborhood candidate scheduling, frontier propagation and dense-versus-sparse smoke benchmarks.
-- **V4 — Local model evaluation:** select and pin a small model/runtime, measure peak memory and latency, and compare typed model outputs against rules and test fixtures.
-- **V5 — Production hardening:** CI tests, authorized connectors, access controls, durable shared storage, privacy/security review and repeatable evaluation.
+- **V1 — Executive walkthrough.**
+- **V2 — Engine verification and conflict-aware reversal/replay.**
+- **V3 — Indexed sparse compute with a dense reference and synthetic benchmark.**
+- **V4 — Browser-local SmolLM2 inference lab and a five-case structured decision quality/latency smoke test (current).**
+- **V5 — Native target-device memory/latency profiling, a larger labelled dataset, and explicit typed adapter that proposes—not applies—graph actions.**
+- **V6 — Production hardening: CI, permissioned connectors, access control, durable storage, privacy/security review and repeatable evaluation.**
 
 This is an independent research concept, not an official Yext product or endorsement.
