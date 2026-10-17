@@ -4,6 +4,51 @@
 
 Live concept demo: deploy this repository to Vercel (static HTML; no build command required).
 
+## Guided demo (self-playing, for a non-interactive audience)
+
+`demo.html` (served at `/demo` on Vercel, or `http://localhost:8000/demo.html` locally) is a ~3½-minute tour that plays itself: no clicks, no scrolling. It is built for showing the idea to an executive.
+
+| Time | Chapter | What the viewer sees |
+| --- | --- | --- |
+| 0:00 | Intro | The idea in one line |
+| 0:08 | Problem | A knowledge graph slowly goes stale; three sources disagree, nothing notices, an AI assistant gives a wrong answer |
+| 0:32 | Idea | Every fact gets a pulse (activation, confidence, uncertainty); one signal wakes only its neighborhood |
+| 0:53 | Walk-through | One conflict end to end: detect, scope, reason, human approval, publish, undo/replay |
+| 1:37 | Use cases | Holiday hours, duplicates, stale facts, AI-answer accuracy |
+| 2:01 | Efficiency | Brute-force re-check vs. waking only the touched neighborhood (counted on the page's own 128-node graph) |
+| 2:23 | Value | A transparent savings estimate with every assumption on screen |
+| 3:01 | Status | What works, what is being validated, what is not built yet |
+| 3:21 | Close | Holds on the final frame |
+
+**Presenter controls** (hidden from the audience; the cursor and toolbar fade out when the mouse is still): `Space` pause/play, `←` `→` previous/next chapter, `R` restart, `F` fullscreen. Clicking the stage does nothing, so an accidental click cannot interrupt the tour.
+
+**URL options.** `?autoplay=0` starts paused; `?scene=3` or `?t=95` jumps in for rehearsal.
+
+**The savings estimate is a model, not a measurement.** Every input is a placeholder and is shown on screen. Edit the `ASSUMPTIONS` block at the top of the script in `demo.html`, or override from the URL before the meeting:
+
+```
+/demo?locations=50000&issues=3&minutes=30&rate=60&auto=0.5
+```
+
+| Param | Meaning | Default |
+| --- | --- | --- |
+| `locations` | Locations the estimate is sized for | 10000 |
+| `issues` | Issues per location per year that need a human decision | 2 |
+| `minutes` | Minutes per issue handled by hand today | 25 |
+| `onetap` | Minutes per issue once the mesh has drafted an evidence-backed fix | 4 |
+| `rate` | Loaded cost per analyst hour (USD) | 45 |
+| `auto` | Expected share of issues reaching one-tap review (range shown as -20 / +15 points) | 0.6 |
+| `records`, `checks`, `checkcost` | Brute-force baseline: records per location, re-checks per year, AI cost per check | 40, 52, 0.002 |
+
+Total saving = analyst time saved + AI compute avoided versus a brute-force "re-check everything with an LLM" baseline. The compute share uses the touched-node fraction counted on the demo graph (16 of 128). Customer visits, AI-answer accuracy and brand effects are deliberately not counted. Replace these placeholders with measurements from a read-only pilot before quoting any number outside the room.
+
+**Suggested talk track** (the on-screen captions carry the story, so you can add colour rather than read them out):
+1. *Problem:* "Your graph is a record. Nobody finds out a fact died until a customer, or an AI assistant, tells them."
+2. *Idea:* "We give each fact a pulse. When something changes, only its neighborhood wakes."
+3. *Walk-through:* "A manager overrides Christmas Eve hours. The mesh sees the conflict, drafts the fix, a person approves, and any decision can be undone."
+4. *Value:* "Here is the back-of-envelope with every assumption visible. Tell me which numbers are wrong and I will change them live."
+5. *Status:* "This is a prototype on synthetic data. The ask is a read-only pilot on one customer."
+
 ## What the prototype demonstrates
 
 - An interactive Three.js 3D network view for synthetic entities, sources and review signals.

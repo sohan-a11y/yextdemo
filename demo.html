@@ -1,0 +1,906 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="theme-color" content="#070b12"/>
+<meta name="description" content="A self-playing guided tour of Living Knowledge Mesh: why knowledge graphs need a pulse, how a conflict is resolved, and a transparent savings estimate."/>
+<title>Living Knowledge Mesh — Guided Demo</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27%3E%3Crect width=%2724%27 height=%2724%27 rx=%276%27 fill=%27%2378e7f3%27/%3E%3Ccircle cx=%2712%27 cy=%2712%27 r=%272.6%27 fill=%27%2309151e%27/%3E%3C/svg%3E"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+:root{color-scheme:dark;--bg:#070b12;--ink:#edf4fb;--mute:#9bacbf;--dim:#62748a;--line:#25344a;--panel:rgba(13,21,33,.9);--cyan:#78e7f3;--mint:#9aefc0;--amber:#ffc879;--red:#ff8291;--violet:#b7a4ff;--sans:"Manrope",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--mono:"DM Mono",ui-monospace,Menlo,Consolas,monospace}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#04070c;color:var(--ink);font-family:var(--sans);overflow:hidden;-webkit-font-smoothing:antialiased}
+body.idle{cursor:none}
+#viewport{position:fixed;inset:0}
+#stage{position:absolute;left:50%;top:50%;width:1920px;height:1080px;transform-origin:center center;overflow:hidden;background:radial-gradient(ellipse 70% 60% at 68% 8%,rgba(38,89,119,.24),transparent 60%),radial-gradient(ellipse 50% 50% at 10% 100%,rgba(70,50,130,.16),transparent 60%),var(--bg)}
+#mesh{position:absolute;left:0;top:0;width:1920px;height:1080px}
+.shade{position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(7,11,18,.72) 0,rgba(7,11,18,0) 15%,rgba(7,11,18,0) 74%,rgba(7,11,18,.94) 90%)}
+
+/* chrome */
+.chrome{position:absolute;left:0;right:0;top:0;height:96px;padding:0 64px;display:flex;align-items:center;justify-content:space-between;z-index:5}
+.brand{display:flex;align-items:center;gap:16px;font-weight:800;font-size:21px;letter-spacing:.14em}
+.mark{width:44px;height:44px;border-radius:13px;background:linear-gradient(145deg,#a2f0ca,#6acde8);display:grid;place-items:center;color:#09151e;box-shadow:0 0 34px #72d9e533}
+.mark svg{width:28px;height:28px}
+.chip{font:500 17px var(--mono);letter-spacing:.06em;padding:9px 16px;border-radius:999px;border:1px solid #3a4a5e;background:rgba(18,27,40,.82);color:#bccbda;display:inline-flex;gap:10px;align-items:center}
+.chip i{width:9px;height:9px;border-radius:50%;background:var(--amber);display:inline-block}
+.paused-flag{position:absolute;top:30px;left:50%;transform:translateX(-50%);z-index:6;opacity:0;transition:opacity .25s}
+.paused .paused-flag{opacity:1}
+
+/* scenes + cues */
+.scene{position:absolute;inset:0;opacity:0;visibility:hidden;transition:opacity .6s ease,visibility 0s .6s;z-index:2}
+.scene.on{opacity:1;visibility:visible;transition:opacity .7s ease .2s,visibility 0s}
+.cue{opacity:0;transform:translateY(16px);transition:opacity .65s ease,transform .65s ease}
+.cue.in{opacity:1;transform:none}
+.cue.pop{transform:scale(.94)}
+.cue.pop.in{transform:none}
+.abs{position:absolute}
+.eyebrow{font:500 22px var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--cyan)}
+h1,h2,h3,p{margin:0}
+h1{font-size:104px;line-height:1.02;font-weight:800;letter-spacing:-.045em}
+h2{font-size:66px;line-height:1.06;font-weight:800;letter-spacing:-.04em}
+.grad{background:linear-gradient(95deg,var(--mint),var(--cyan) 55%,#9fb7ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.lede{font-size:34px;line-height:1.4;color:#b9c8d8;font-weight:500}
+.mono{font-family:var(--mono);letter-spacing:0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:26px;box-shadow:0 30px 80px rgba(0,0,0,.45)}
+.tag{font:500 17px var(--mono);letter-spacing:.08em;padding:6px 12px;border-radius:8px;white-space:nowrap}
+.tag.mint{background:rgba(154,239,192,.13);color:var(--mint)}
+.tag.amber{background:rgba(255,200,121,.14);color:var(--amber)}
+.tag.red{background:rgba(255,130,145,.14);color:var(--red)}
+.tag.cyan{background:rgba(120,231,243,.13);color:var(--cyan)}
+.tag.violet{background:rgba(183,164,255,.15);color:var(--violet)}
+
+/* caption + rail */
+.caption{position:absolute;left:120px;right:120px;top:900px;height:110px;z-index:6;display:flex;align-items:flex-start;justify-content:center;text-align:center}
+#cap{font-size:37px;line-height:1.3;font-weight:600;letter-spacing:-.02em;color:#f3f8fd;text-shadow:0 2px 22px rgba(0,0,0,.9);transition:opacity .22s ease,transform .22s ease;max-width:1680px}
+#cap.out{opacity:0;transform:translateY(8px)}
+#cap b{color:var(--cyan);font-weight:800}
+.rail{position:absolute;left:64px;right:64px;top:1030px;height:46px;z-index:6;display:flex;gap:6px}
+.seg{position:relative;min-width:0}
+.seg .bar{height:4px;border-radius:3px;background:#1d2a3b;overflow:hidden}
+.seg .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--mint),var(--cyan))}
+.seg span{display:block;margin-top:9px;font:500 15px var(--mono);letter-spacing:.06em;color:#4d5f74;white-space:nowrap;overflow:hidden;text-overflow:clip;transition:color .3s}
+.seg.cur span{color:#9fb2c6}
+#clock{position:absolute;right:64px;top:1002px;z-index:6;font:500 16px var(--mono);color:#53667c;letter-spacing:.08em}
+
+/* ---- scene 0 intro ---- */
+.center{position:absolute;left:0;right:0;top:250px;text-align:center;padding:0 200px}
+.center .eyebrow{margin-bottom:34px}
+.center .lede{max-width:1180px;margin:38px auto 0}
+
+/* ---- scene 1 problem ---- */
+.col-l{position:absolute;left:110px;top:140px;width:820px}
+.col-l .eyebrow{margin-bottom:18px}
+.src-card{position:absolute;left:110px;top:372px;width:820px;overflow:hidden}
+.src-head{display:flex;justify-content:space-between;align-items:center;padding:20px 28px;border-bottom:1px solid var(--line);background:rgba(20,31,46,.7)}
+.src-head b{font-size:25px;font-weight:700;letter-spacing:-.02em}
+.src-head .mono{font-size:20px;color:var(--amber)}
+.src-row{display:grid;grid-template-columns:1fr auto;gap:2px 20px;padding:15px 28px;border-bottom:1px solid #1b2839;align-items:center}
+.src-row .n{font-size:22px;color:var(--mute);font-weight:600}
+.src-row .v{font:500 29px var(--mono);text-align:right}
+.src-row .m{font-size:19px;color:var(--dim);grid-column:1/2}
+.src-row .w{font:500 18px var(--mono);color:var(--dim);text-align:right}
+.src-row.truth .v{color:var(--mint)}
+.src-row.truth .n{color:#cfe9dc}
+.src-state{display:flex;justify-content:space-between;padding:16px 28px;font:500 20px var(--mono);color:var(--red);background:rgba(255,130,145,.07)}
+.ai{position:absolute;left:110px;width:820px;padding:16px 26px}
+.ai .who{font:500 17px var(--mono);letter-spacing:.1em;color:var(--dim);text-transform:uppercase}
+.ai .q{font-size:22px;color:var(--mute);margin:5px 0 8px;font-style:italic}
+.ai .a{font-size:26px;font-weight:700;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.ai.bad{border-color:#5b2f3a}
+.ai.good{border-color:#2f5b47}
+
+/* ---- scene 2 idea ---- */
+.big-card{position:absolute;padding:28px 30px}
+.lbl{font:500 18px var(--mono);letter-spacing:.14em;color:var(--dim);text-transform:uppercase}
+.woken-n{font:500 132px/1 var(--mono);letter-spacing:-.04em;color:var(--cyan);margin:14px 0 6px}
+.woken-n small{font-size:48px;color:var(--dim)}
+.insp-title{font-size:30px;font-weight:800;letter-spacing:-.03em;margin:10px 0 24px}
+.meter{margin-bottom:26px}
+.meter .row{display:flex;justify-content:space-between;font-size:23px;font-weight:600;margin-bottom:10px}
+.meter .row span:first-child{color:var(--mute)}
+.meter .row .mono{font-size:26px}
+.meter .track{height:12px;border-radius:7px;background:#1b2838;overflow:hidden}
+.meter .track i{display:block;height:100%;width:0;border-radius:7px}
+.verbs{position:absolute;left:0;right:0;top:798px;display:flex;justify-content:center;gap:18px;align-items:center}
+.verb{font:700 28px var(--sans);letter-spacing:.14em;padding:14px 26px;border-radius:14px;border:1px solid #2f4a5a;background:rgba(14,28,38,.9);color:#d8f6fa}
+.verbs .arrow{font:500 26px var(--mono);color:#4c6678}
+
+/* ---- scene 3 case ---- */
+.eyebrow-top{position:absolute;left:110px;top:128px}
+.steps{position:absolute;left:1010px;top:128px;width:800px;display:grid;gap:14px}
+.steps-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.steps-head b{font-size:27px;font-weight:700;letter-spacing:-.02em}
+.step{display:grid;grid-template-columns:62px 1fr;gap:20px;padding:18px 24px 18px 20px;border-radius:22px;border:1px solid var(--line);background:rgba(13,21,33,.9);transition:opacity .65s ease,transform .65s ease,border-color .4s,background .4s}
+.step .num{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;font:500 24px var(--mono);border:1px solid #3a4c60;color:var(--mute);transition:all .4s}
+.step .st-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.step .st-title{font-size:27px;font-weight:800;letter-spacing:-.025em}
+.step p{font-size:22px;line-height:1.36;color:#c3d1df}
+.step p b{color:#fff;font-weight:700}
+.step .sub{font-size:20px;color:var(--mute);margin-top:3px}
+.step .detail{overflow:hidden;max-height:260px;transition:max-height .7s ease,opacity .5s ease,margin .5s ease}
+.step.done{padding-top:12px;padding-bottom:12px;background:rgba(13,21,33,.78)}
+.step.done .detail{max-height:0;opacity:0}
+.step.done .st-top{margin-bottom:0}
+.step.done .num{width:42px;height:42px;font-size:20px}
+.step{transition:opacity .65s ease,transform .65s ease,border-color .4s,background .4s,padding .6s ease}
+.step.active{border-color:#3d7488;background:linear-gradient(90deg,rgba(24,53,66,.95),rgba(14,26,38,.92))}
+.step.active .num{border-color:var(--cyan);color:var(--cyan);box-shadow:0 0 22px rgba(120,231,243,.3)}
+.step.done .num{background:rgba(154,239,192,.14);border-color:#4a7f66;color:var(--mint)}
+.stack{display:grid;margin-top:9px}
+.stack>*{grid-area:1/1}
+.btn{display:inline-flex;align-items:center;justify-self:start;font:700 21px var(--sans);padding:10px 22px;border-radius:12px;border:1px solid #4a6a7a;background:#17303c;color:#d8f6fa}
+.btn.ok{background:rgba(154,239,192,.14);border-color:#4a7f66;color:var(--mint)}
+.ledger{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:9px;padding:11px 14px;border-radius:12px;background:#0b121c;border:1px solid #223144;font-size:19px}
+.ledger code{font:500 18px var(--mono);color:var(--violet)}
+.ledger .state{margin-left:auto}
+
+/* ---- scene 4 use cases ---- */
+.uc{position:absolute;width:790px;height:236px;padding:26px 34px;display:grid;grid-template-columns:84px 1fr;gap:26px;align-content:start}
+.uc .ico{width:84px;height:84px;border-radius:22px;display:grid;place-items:center;border:1px solid #33506a;background:#122233;color:var(--cyan)}
+.uc .ico svg{width:46px;height:46px}
+.uc h3{font-size:32px;font-weight:800;letter-spacing:-.03em;margin-bottom:8px}
+.uc p{font-size:24px;line-height:1.4;color:#b9c8d8}
+.uc .tag{display:inline-block;margin-top:14px}
+
+/* ---- scene 5 efficiency ---- */
+.cmp{position:absolute;top:238px;width:830px;padding:30px 36px 28px}
+.cmp h3{font-size:34px;font-weight:800;letter-spacing:-.03em}
+.cmp .sub{font-size:22px;color:var(--mute);margin:6px 0 22px}
+.dots{display:grid;grid-template-columns:repeat(16,24px);gap:14px 22px;justify-content:center}
+.dots i{width:24px;height:24px;border-radius:50%;background:#1a2636;transition:background .25s,box-shadow .25s}
+.dots.hot i.on{background:var(--red);box-shadow:0 0 14px rgba(255,130,145,.55)}
+.dots.cool i.on{background:var(--cyan);box-shadow:0 0 16px rgba(120,231,243,.7)}
+.cmp .count{display:flex;justify-content:space-between;align-items:baseline;margin-top:20px}
+.cmp .count .mono{font-size:44px;font-weight:500}
+.cmp .count span.k{font-size:22px;color:var(--mute)}
+.bigsave{position:absolute;left:0;right:0;top:790px;display:flex;justify-content:center;gap:22px;align-items:center}
+.bigsave .pill{font:700 30px var(--sans);padding:14px 30px;border-radius:16px;border:1px solid #2f4a5a;background:rgba(14,28,38,.92);color:#d8f6fa;letter-spacing:-.01em}
+.bigsave .pill b{color:var(--mint)}
+
+/* ---- scene 6 value ---- */
+.assume{position:absolute;left:110px;top:236px;width:700px;overflow:hidden}
+.assume .hd{padding:20px 28px;border-bottom:1px solid var(--line);background:rgba(20,31,46,.7);display:flex;justify-content:space-between;align-items:center}
+.assume .hd b{font-size:24px;font-weight:700}
+.arow{display:flex;justify-content:space-between;align-items:baseline;gap:16px;padding:13px 28px;border-bottom:1px solid #1b2839;font-size:22px;color:var(--mute)}
+.arow:last-child{border-bottom:0}
+.arow b{font:500 26px var(--mono);color:var(--ink)}
+.excl{position:absolute;left:110px;top:760px;width:700px;font-size:22px;line-height:1.42;color:var(--mute);padding:0 6px}
+.excl b{color:var(--amber);font-weight:700}
+.vpanel{position:absolute;left:860px;top:236px;width:950px;display:grid;gap:14px}
+.blk{padding:18px 30px 14px}
+.blk .t{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.blk .t b{font-size:26px;font-weight:700;letter-spacing:-.02em}
+.brow{display:grid;grid-template-columns:210px 1fr 120px;gap:16px;align-items:center;margin:7px 0;font-size:21px;color:var(--mute)}
+.brow .bar{height:24px;border-radius:7px;background:#16212f;overflow:hidden}
+.brow .bar i{display:block;height:100%;width:0;border-radius:7px}
+.brow .num{font:500 25px var(--mono);color:var(--ink);text-align:right}
+.total{padding:18px 34px 16px;border-color:#2e6a5a;background:linear-gradient(120deg,rgba(18,52,46,.94),rgba(13,24,36,.94))}
+.total .big{font:500 104px/1.05 var(--mono);letter-spacing:-.05em;color:var(--mint)}
+.total .big small{font-size:38px;letter-spacing:0;color:#7fb8a0}
+.total .meta{display:flex;gap:26px;flex-wrap:wrap;margin-top:6px;font-size:23px;color:#a9c9bb}
+.total .meta b{color:#e9fff5;font-weight:700}
+.scale{display:flex;justify-content:space-between;gap:14px;font-size:21px;color:var(--mute)}
+.scale span b{font:500 24px var(--mono);color:var(--ink);margin-left:8px}
+
+/* ---- scene 7 status ---- */
+.col3{position:absolute;top:272px;width:540px;height:452px;padding:28px 32px}
+.col3 h3{font-size:30px;font-weight:800;letter-spacing:-.03em;margin:14px 0 18px}
+.col3 ul{list-style:none;margin:0;padding:0;display:grid;gap:15px}
+.col3 li{font-size:24px;line-height:1.35;color:#c5d3e0;padding-left:34px;position:relative}
+.col3 li:before{content:"";position:absolute;left:4px;top:11px;width:13px;height:13px;border-radius:50%}
+.col3.ok li:before{background:var(--mint)}
+.col3.mid li:before{background:var(--amber)}
+.col3.no li:before{border:2px solid var(--violet)}
+.ask{position:absolute;left:110px;right:110px;top:752px;padding:26px 40px;border-color:#2e6a5a;background:linear-gradient(100deg,rgba(18,52,46,.94),rgba(13,24,36,.94));display:flex;align-items:center;gap:28px}
+.ask .t{font-size:30px;line-height:1.35;font-weight:600;letter-spacing:-.02em}
+.ask .t b{color:var(--mint)}
+
+/* ---- scene 8 close ---- */
+.stats{position:absolute;left:150px;right:150px;top:508px;display:grid;grid-template-columns:repeat(3,1fr);gap:28px}
+.stat{padding:30px 34px}
+.stat .n{font:500 84px/1 var(--mono);letter-spacing:-.05em;color:var(--cyan)}
+.stat .n small{font-size:34px;color:var(--dim);letter-spacing:0}
+.stat p{font-size:23px;color:var(--mute);margin-top:12px;line-height:1.35}
+.fine{position:absolute;left:0;right:0;top:822px;text-align:center;font:500 19px var(--mono);letter-spacing:.05em;color:#6c8095}
+
+/* presenter controls */
+#controls{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:30;display:flex;gap:8px;align-items:center;padding:8px 10px;border-radius:14px;background:rgba(10,16,25,.92);border:1px solid #2a394d;opacity:0;pointer-events:none;transition:opacity .25s}
+body.hover #controls{opacity:1;pointer-events:auto}
+#controls button{border:1px solid #2f4054;background:#111b28;color:#dce8f3;border-radius:9px;min-width:42px;height:38px;font:600 16px var(--sans);cursor:pointer}
+#controls button:hover{background:#18283a}
+#controls button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+#controls .hint{font:500 12px var(--mono);color:#6d8197;padding:0 8px;letter-spacing:.04em;white-space:nowrap}
+#rotate{display:none;position:fixed;left:12px;right:12px;top:12px;z-index:40;padding:10px 14px;border-radius:10px;background:#1c2a3a;color:#cfe0ef;font:600 13px var(--sans);text-align:center}
+@media (orientation:portrait) and (max-width:800px){#rotate{display:block}#controls .hint{display:none}}
+@media (prefers-reduced-motion:reduce){.cue{transition-duration:.01s}}
+</style>
+</head>
+<body>
+<div id="rotate">Rotate your phone sideways for the full-screen tour.</div>
+<div id="viewport">
+<div id="stage" class="">
+  <canvas id="mesh"></canvas>
+  <div class="shade"></div>
+
+  <header class="chrome">
+    <div class="brand"><span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="2.4" fill="currentColor"/><circle cx="5" cy="6" r="1.6"/><circle cx="19" cy="5" r="1.6"/><circle cx="19" cy="18.5" r="1.6"/><circle cx="5.5" cy="18" r="1.6"/><path d="M6.4 7l4 3.6M17.8 6.2l-4.2 4.2M17.8 17.3l-4-3.9M6.6 16.7l3.8-3.4"/></svg></span>LIVING KNOWLEDGE MESH</div>
+    <div class="chip"><i></i>PROTOTYPE · SYNTHETIC DATA · ILLUSTRATIVE ESTIMATES</div>
+  </header>
+  <div class="chip paused-flag">❚❚ PAUSED</div>
+
+  <!-- 0 ─ intro -->
+  <section class="scene" data-name="Intro" data-dur="8">
+    <div class="center">
+      <div class="eyebrow cue" data-t="0.4">A guided tour · nothing to click</div>
+      <h1 class="cue" data-t="1">A knowledge graph<br/>that <span class="grad">stays alive</span>.</h1>
+      <p class="lede cue" data-t="2.6">Living Knowledge Mesh notices when facts go stale or disagree, works out the fix, and asks a person to approve it.</p>
+    </div>
+  </section>
+
+  <!-- 1 ─ problem -->
+  <section class="scene" data-name="Problem" data-dur="24">
+    <div class="col-l">
+      <div class="eyebrow cue" data-t="0.2">01 · The problem</div>
+      <h2 class="cue" data-t="0.6">Facts go stale.<br/>The graph can’t tell.</h2>
+    </div>
+    <div class="card src-card cue" data-t="3">
+      <div class="src-head"><b>Brooklyn North · closing time · Dec 24</b><span class="mono">last verified <span id="days">0</span> days ago</span></div>
+      <div class="src-row cue" data-t="4.2"><span class="n">Published profile</span><span class="v">9:00 PM</span><span class="m">what customers and AI assistants see</span><span class="w">verified 47 days ago</span></div>
+      <div class="src-row cue" data-t="5.6"><span class="n">Maps listing</span><span class="v" style="color:var(--amber)">8:00 PM</span><span class="m">synced from a directory feed</span><span class="w">synced 12 days ago</span></div>
+      <div class="src-row truth cue" data-t="7"><span class="n">Manager note · entered today</span><span class="v">6:00 PM</span><span class="m">holiday early close, Dec 24 only</span><span class="w">the person on the ground</span></div>
+      <div class="src-state cue" data-t="12.5"><span>Graph state: unchanged</span><span>Alerts raised: 0 · Owner: none</span></div>
+    </div>
+    <div class="card ai bad cue" data-t="18.5" style="top:758px">
+      <div class="who">An AI assistant, 6:40 PM on Dec 24</div>
+      <div class="q">“Is Northstar Brooklyn North open right now?”</div>
+      <div class="a">“Yes — open until 9:00 PM.” <span class="tag red">✗ WRONG · CLOSED SINCE 6:00 PM</span></div>
+    </div>
+  </section>
+
+  <!-- 2 ─ idea -->
+  <section class="scene" data-name="Idea" data-dur="21">
+    <div class="abs" style="left:110px;top:128px">
+      <div class="eyebrow cue" data-t="0.1">02 · The idea</div>
+      <h2 class="cue" data-t="0.4" style="margin-top:16px">Give every fact<br/>a pulse.</h2>
+    </div>
+    <div class="card big-card cue" data-t="8.6" style="left:110px;top:430px;width:430px">
+      <div class="lbl">Facts woken by this signal</div>
+      <div class="woken-n"><span id="woken">0</span><small> / <span data-bind="nodes"></span></small></div>
+      <div style="font-size:23px;color:var(--mute)"><b id="asleep" style="color:var(--ink)">0</b> stayed asleep<br/>nothing re-run</div>
+    </div>
+    <div class="card big-card cue" data-t="3.4" style="left:1380px;top:215px;width:430px">
+      <div class="lbl">Live state of one fact</div>
+      <div class="insp-title">Brooklyn North · Hours</div>
+      <div class="meter"><div class="row"><span>Activation</span><span class="mono" id="vA">0.35</span></div><div class="track"><i id="bA" style="background:var(--cyan)"></i></div></div>
+      <div class="meter"><div class="row"><span>Confidence</span><span class="mono" id="vC">0.91</span></div><div class="track"><i id="bC" style="background:var(--mint)"></i></div></div>
+      <div class="meter" style="margin-bottom:6px"><div class="row"><span>Uncertainty</span><span class="mono" id="vU">0.12</span></div><div class="track"><i id="bU" style="background:var(--amber)"></i></div></div>
+    </div>
+    <div class="verbs">
+      <span class="verb cue" data-t="16.2">SENSE</span><span class="arrow cue" data-t="16.5">→</span>
+      <span class="verb cue" data-t="16.9">WEIGH</span><span class="arrow cue" data-t="17.2">→</span>
+      <span class="verb cue" data-t="17.6">PROPOSE</span><span class="arrow cue" data-t="17.9">→</span>
+      <span class="verb cue" data-t="18.3">REMEMBER</span>
+    </div>
+  </section>
+
+  <!-- 3 ─ walkthrough -->
+  <section class="scene" data-name="Walk-through" data-dur="44">
+    <div class="eyebrow eyebrow-top cue" data-t="0.1">03 · One conflict, start to finish</div>
+    <div class="steps">
+      <div class="steps-head cue" data-t="0.8"><b>Case · Brooklyn North · Dec 24</b><span class="tag amber">SIMULATED · SYNTHETIC DATA</span></div>
+      <div class="step cue" data-t="2"><div class="num">1</div><div><div class="st-top"><span class="st-title">Detect</span><span class="tag cyan">MESH</span></div><div class="detail">
+        <p>A manager override arrives: <b>closes 6:00 PM on Dec 24</b>.</p><p class="sub">Three sources now disagree. Confidence in the published hours falls <b>91% → 38%</b>.</p></div></div></div>
+      <div class="step cue" data-t="9.5"><div class="num">2</div><div><div class="st-top"><span class="st-title">Scope</span><span class="tag cyan">MESH · RULES</span></div><div class="detail">
+        <p>Only <b><span data-bind="touched"></span> related facts</b> wake up to supply evidence.</p><p class="sub"><span data-bind="untouched"></span> others are left alone.</p></div></div></div>
+      <div class="step cue" data-t="16.5"><div class="num">3</div><div><div class="st-top"><span class="st-title">Reason</span><span class="tag violet">SMALL MODEL</span></div><div class="detail">
+        <p>Reads just that evidence and drafts: <b>“Close at 6:00 PM — a dated override outranks an undated profile.”</b></p><p class="sub">Confidence 96% · 3 sources cited</p></div></div></div>
+      <div class="step cue" data-t="24.5"><div class="num">4</div><div><div class="st-top"><span class="st-title">Approve</span><span class="tag amber">HUMAN</span></div><div class="detail">
+        <p>A reviewer approves, edits or rejects. <b>Nothing publishes without a person.</b></p>
+        <div class="stack"><span class="btn cue" data-t="25.4" data-out="28">Approve change</span><span class="btn ok cue" data-t="28">✓ Approved by reviewer</span></div></div></div></div>
+      <div class="step cue" data-t="31.5"><div class="num">5</div><div><div class="st-top"><span class="st-title">Publish &amp; remember</span><span class="tag mint">LEDGER</span></div><div class="detail">
+        <p>Corrected across <b>8 channels</b>, including AI assistants — and logged as a reversible event.</p>
+        <div class="ledger cue" data-t="34"><code>dot-hours-review-001</code><span id="ledText">hours → 6:00 PM</span><span class="tag mint state" id="ledState">ACTIVE</span></div></div></div></div>
+    </div>
+    <div class="card ai bad" id="aiWrong" style="top:756px;width:800px;left:110px">
+      <div class="who">AI assistant, 6:40 PM Dec 24</div><div class="q">“Is Brooklyn North open right now?”</div>
+      <div class="a">“Yes — until 9:00 PM.” <span class="tag red">✗ WRONG</span></div>
+    </div>
+    <div class="card ai good" id="aiRight" style="top:756px;width:800px;left:110px">
+      <div class="who">AI assistant, 6:40 PM Dec 24</div><div class="q">“Is Brooklyn North open right now?”</div>
+      <div class="a">“Closed — closed at 6:00 PM today.” <span class="tag mint">✓ CORRECT</span></div>
+    </div>
+  </section>
+
+  <!-- 4 ─ use cases -->
+  <section class="scene" data-name="Use cases" data-dur="24">
+    <div class="abs" style="left:160px;top:128px">
+      <div class="eyebrow cue" data-t="0.2">04 · Where it pays off</div>
+      <h2 class="cue" data-t="0.5" style="margin-top:14px;font-size:58px">Anywhere facts change faster<br/>than people can check them.</h2>
+    </div>
+    <div class="card uc cue pop" data-t="2.2" style="left:160px;top:352px"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.2 2"/></svg></div><div><h3>Holiday &amp; special hours</h3><p>A dated manager override beats a stale profile — caught before the holiday, not after the complaints.</p><span class="tag cyan">CONFLICT DETECTION</span></div></div>
+    <div class="card uc cue pop" data-t="6.4" style="left:970px;top:352px"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg></div><div><h3>Duplicate &amp; conflicting records</h3><p>Near-identical entries are grouped so one decision settles many.</p><span class="tag cyan">DUPLICATE TRIAGE</span></div></div>
+    <div class="card uc cue pop" data-t="10.6" style="left:160px;top:604px"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3h12M6 21h12M7 3c0 5 5 6 5 9s-5 4-5 9M17 3c0 5-5 6-5 9s5 4 5 9"/></svg></div><div><h3>Stale facts</h3><p>Facts nobody has verified in weeks raise their own hand, ranked by who they affect.</p><span class="tag cyan">FRESHNESS</span></div></div>
+    <div class="card uc cue pop" data-t="14.8" style="left:970px;top:604px"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9.5h8M8 12.5h5"/></svg></div><div><h3>AI-answer accuracy</h3><p>Search, voice and AI assistants answer from your data. Stale facts become wrong answers.</p><span class="tag cyan">DOWNSTREAM TRUST</span></div></div>
+  </section>
+
+  <!-- 5 ─ efficiency -->
+  <section class="scene" data-name="Efficiency" data-dur="22">
+    <div class="abs" style="left:120px;top:128px">
+      <div class="eyebrow cue" data-t="0.2">05 · Why it’s cheap to run</div>
+    </div>
+    <div class="card cmp cue" data-t="1" style="left:120px">
+      <h3>Brute force: re-check everything</h3><div class="sub">Every record, every pass, AI on each one</div>
+      <div class="dots hot" id="dotsHot"></div>
+      <div class="count"><span class="k">facts evaluated</span><span class="mono" id="cntHot" style="color:var(--red)">0 / 128</span></div>
+    </div>
+    <div class="card cmp cue" data-t="8.4" style="left:970px;border-color:#2f5f6e">
+      <h3>Living mesh: wake the neighborhood</h3><div class="sub">Only the facts the signal actually touches</div>
+      <div class="dots cool" id="dotsCool"></div>
+      <div class="count"><span class="k">facts evaluated</span><span class="mono" id="cntCool" style="color:var(--cyan)">0 / 128</span></div>
+    </div>
+    <div class="bigsave">
+      <span class="pill cue" data-t="14"><b data-bind="pctLess"></b> less work for this signal*</span>
+      <span class="pill cue" data-t="17">Rules for the routine · model only for judgement · person approves</span>
+    </div>
+    <div class="abs cue" data-t="14.5" style="left:0;right:0;top:862px;text-align:center;font:500 16px var(--mono);color:#5d6f84;z-index:7">*Counted on this page’s 128-node synthetic graph, within two hops of one signal. Behaviour at enterprise scale is not yet measured.</div>
+  </section>
+
+  <!-- 6 ─ value -->
+  <section class="scene" data-name="Value" data-dur="38">
+    <div class="abs" style="left:110px;top:128px"><div class="eyebrow cue" data-t="0.2">06 · What it could be worth</div></div>
+    <div class="card assume cue" data-t="1">
+      <div class="hd"><b>Assumptions · per <span data-bind="locations"></span> locations</b><span class="tag amber">EDITABLE</span></div>
+      <div class="arow cue" data-t="1.8"><span>Issues needing attention / location / yr</span><b data-bind="issuesPerLoc"></b></div>
+      <div class="arow cue" data-t="3.4"><span>Handled by hand today (detect → fix → verify)</span><b><span data-bind="manualMin"></span> min</b></div>
+      <div class="arow cue" data-t="5"><span>Loaded analyst cost</span><b data-bind="rate"></b></div>
+      <div class="arow cue" data-t="6.6"><span>Brought to one-tap review by the mesh</span><b data-bind="autoPct"></b></div>
+      <div class="arow cue" data-t="8.2"><span>One-tap review time</span><b><span data-bind="oneTapMin"></span> min</b></div>
+      <div class="arow cue" data-t="9.8"><span>Brute-force baseline: <span data-bind="records"></span> records, <span data-bind="cadence"></span></span><b><span data-bind="checkCost"></span> / check</b></div>
+    </div>
+    <div class="excl cue" data-t="33"><b>Not counted:</b> lost customer visits avoided, more accurate AI answers, brand trust — real, but hard to measure honestly.</div>
+    <div class="vpanel">
+      <div class="card blk cue" data-t="11">
+        <div class="t"><b>Analyst time</b><span class="tag mint">SAVED <span data-count="laborSaved" data-fmt="money" data-t="16" data-dur="1.6"></span> / yr</span></div>
+        <div class="brow"><span>Today (manual)</span><div class="bar"><i style="background:linear-gradient(90deg,#8a5a66,var(--red))" data-bar="laborToday" data-of="laborToday" data-t="12" data-dur="1.6"></i></div><span class="num" data-count="laborToday" data-fmt="money" data-t="12" data-dur="1.6"></span></div>
+        <div class="brow"><span>With the mesh</span><div class="bar"><i style="background:linear-gradient(90deg,#3f8f9a,var(--cyan))" data-bar="laborWith" data-of="laborToday" data-t="14" data-dur="1.6"></i></div><span class="num" data-count="laborWith" data-fmt="money" data-t="14" data-dur="1.6"></span></div>
+      </div>
+      <div class="card blk cue" data-t="19.5">
+        <div class="t"><b>AI compute vs. brute-force re-checking</b><span class="tag mint">SAVED <span data-count="computeSaved" data-fmt="money" data-t="23" data-dur="1.2"></span> / yr</span></div>
+        <div class="brow"><span>Brute force</span><div class="bar"><i style="background:linear-gradient(90deg,#8a5a66,var(--red))" data-bar="computeToday" data-of="computeToday" data-t="20.4" data-dur="1.2"></i></div><span class="num" data-count="computeToday" data-fmt="money" data-t="20.4" data-dur="1.2"></span></div>
+        <div class="brow"><span>Neighborhood only</span><div class="bar"><i style="background:linear-gradient(90deg,#3f8f9a,var(--cyan))" data-bar="computeWith" data-of="computeToday" data-t="21.8" data-dur="1.2"></i></div><span class="num" data-count="computeWith" data-fmt="money" data-t="21.8" data-dur="1.2"></span></div>
+      </div>
+      <div class="card blk total cue" data-t="25.5">
+        <div class="lbl" style="color:#7fb8a0">Estimated annual saving · per <span data-bind="locations"></span> locations</div>
+        <div class="big">≈ <span data-count="total" data-fmt="money" data-t="26.2" data-dur="2"></span><small> / year</small></div>
+        <div class="meta cue" data-t="29"><span>Range <b data-bind="totalLow"></b> – <b data-bind="totalHigh"></b></span><span>≈ <b data-bind="perLoc"></b> per location</span></div>
+      </div>
+      <div class="scale cue" data-t="31"><span>If rates hold, ×10 → <span data-bind="locationsX10"></span> locations<b data-bind="totalX10"></b></span><span>×100 → <span data-bind="locationsX100"></span><b data-bind="totalX100"></b></span></div>
+    </div>
+  </section>
+
+  <!-- 7 ─ status -->
+  <section class="scene" data-name="Status" data-dur="20">
+    <div class="abs" style="left:110px;top:128px"><div class="eyebrow cue" data-t="0.2">07 · Honest status</div><h2 class="cue" data-t="0.5" style="margin-top:14px;font-size:58px">A working prototype — not yet a product.</h2></div>
+    <div class="card col3 ok cue" data-t="2" style="left:110px"><span class="tag mint">WORKING TODAY · SYNTHETIC DATA</span><h3>In this prototype</h3>
+      <ul><li>Living 3D mesh with activation, confidence and uncertainty per fact</li><li>Neighborhood-limited propagation of a signal</li><li>Evidence-backed recommendation with a human approval gate</li><li>Reversible decision ledger: undo and replay</li></ul></div>
+    <div class="card col3 mid cue" data-t="4.5" style="left:690px"><span class="tag amber">BEING VALIDATED</span><h3>Needs proof</h3>
+      <ul><li>Small local model drafting fixes with structured output</li><li>Sparse-compute savings at larger scale</li><li>Accuracy on real, labelled cases</li></ul></div>
+    <div class="card col3 no cue" data-t="7" style="left:1270px"><span class="tag violet">NOT BUILT YET</span><h3>Needs engineering</h3>
+      <ul><li>Live data connectors</li><li>Durable storage, permissions, audit trail</li><li>Real write-back to channels</li></ul></div>
+    <div class="card ask cue" data-t="12.5"><span class="tag mint" style="font-size:20px">NEXT STEP</span><div class="t"><b>A read-only pilot on one customer’s real data</b> — so every estimate you just saw becomes a measurement.</div></div>
+  </section>
+
+  <!-- 8 ─ close -->
+  <section class="scene" data-name="Close" data-dur="12">
+    <div class="center" style="top:230px">
+      <h1 class="cue" data-t="0.4">Knowledge that<br/><span class="grad">stays alive.</span></h1>
+    </div>
+    <div class="stats">
+      <div class="card stat cue pop" data-t="2"><div class="n"><span data-bind="touched"></span><small> / <span data-bind="nodes"></span></small></div><p>facts woken per signal, not the whole graph</p></div>
+      <div class="card stat cue pop" data-t="3.1"><div class="n">1 <small>person</small></div><p>approves every change before it goes live, and any decision can be undone</p></div>
+      <div class="card stat cue pop" data-t="4.2"><div class="n">≈ <span data-bind="total"></span></div><p>a year per <span data-bind="locations"></span> locations — illustrative, to be replaced by pilot measurements</p></div>
+    </div>
+    <div class="fine cue" data-t="6.5">Created by Sohan Merugu · independent research prototype · synthetic data · not affiliated with or endorsed by Yext</div>
+  </section>
+
+  <div class="caption"><p id="cap"></p></div>
+  <div id="clock">0:00</div>
+  <div class="rail" id="rail"></div>
+</div>
+</div>
+
+<div id="controls" role="toolbar" aria-label="Presenter controls">
+  <button id="bPrev" title="Previous chapter (←)" aria-label="Previous chapter">⏮</button>
+  <button id="bPlay" title="Play / pause (Space)" aria-label="Play or pause">❚❚</button>
+  <button id="bNext" title="Next chapter (→)" aria-label="Next chapter">⏭</button>
+  <button id="bRestart" title="Restart (R)" aria-label="Restart">↻</button>
+  <button id="bFull" title="Fullscreen (F)" aria-label="Fullscreen">⛶</button>
+  <span class="hint">SPACE pause · ← → chapters · R restart · F fullscreen</span>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+/* ======================================================================
+   ASSUMPTIONS — every number in the savings estimate comes from here.
+   Override from the URL, e.g.  demo?locations=50000&issues=3&minutes=30&rate=60&auto=0.5
+   These are placeholders for discussion, NOT measured results.
+   ====================================================================== */
+const qs = new URLSearchParams(location.search);
+const param = (k, d) => { const v = parseFloat(qs.get(k)); return Number.isFinite(v) && v > 0 ? v : d; };
+const A = {
+  locations:   param('locations', 10000), // managed locations the estimate is sized for
+  issuesPerLoc:param('issues', 2),        // issues per location per year that need a human decision
+  manualMin:   param('minutes', 25),      // minutes per issue today: detect, investigate, reconcile, fix, verify
+  oneTapMin:   param('onetap', 4),        // minutes per issue once the mesh has drafted an evidence-backed fix
+  rate:        param('rate', 45),         // loaded cost per analyst hour, USD
+  auto:        Math.min(param('auto', 0.6), 0.95), // expected share of issues that reach one-tap review
+  recordsPerLoc: param('records', 40),    // brute-force baseline: records per location
+  checksPerYear: param('checks', 52),     // brute-force baseline: re-check cadence (weekly)
+  costPerCheck:  param('checkcost', 0.002)// brute-force baseline: AI cost per record check, USD
+};
+const autoLow = Math.max(0.1, A.auto - 0.2), autoHigh = Math.min(0.95, A.auto + 0.15);
+
+/* ====================== seeded RNG + synthetic graph ====================== */
+function rng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function buildGraph(){
+  const R = rng(20261224), nodes = [], edges = [], seen = new Set(), ix = {};
+  const add = (type, label, key) => { const i = nodes.length; nodes.push({type, label}); if (key) ix[key] = i; return i; };
+  const link = (a, b) => { if (a === b) return false; const k = a < b ? a+'-'+b : b+'-'+a; if (seen.has(k)) return false; seen.add(k); edges.push([a, b]); return true; };
+  const pick = a => a[Math.floor(R() * a.length)];
+  const brand = add('brand', 'Northstar Retail Group');
+  const regions = ['Northeast','Southeast','Central','West'].map(n => add('region', n));
+  const locDefs = [['Brooklyn North',0],['Brooklyn South',0],['Queens Central',0],['Manhattan East',0],['Manhattan West',0],['Boston Back Bay',0],
+    ['Atlanta Midtown',1],['Miami Brickell',1],['Charlotte Uptown',1],['Nashville Gulch',1],
+    ['Chicago Loop',2],['Austin Domain',2],['Dallas Uptown',2],['Denver LoDo',2],['Minneapolis North Loop',2],
+    ['Seattle Pike',3],['Portland Pearl',3],['San Diego Gaslamp',3],['Los Angeles Fairfax',3],['San Francisco Mission',3]];
+  const sources = ['Published profile','Maps listing','Directory feed','Website CMS','POS system','Manager portal','Customer reviews','Phone verification','HR schedule','Supplier feed'].map((n,i) => add('source', n, 'src'+i));
+  const channels = ['Search','Maps','Voice','AI assistant','Website','Mobile app','Chat','Directories'].map(n => add('channel', n));
+  const policies = ['Dated override outranks profile','Verified first-party first','Group near-duplicates','Re-verify after 30 days','Holiday calendar rule','Human approval required'].map(n => add('policy', n));
+  const locs = [], hours = [];
+  locDefs.forEach(([n, r], i) => {
+    const l = add('location', n, i === 0 ? 'locBN' : null); locs.push(l); link(regions[r], l);
+    const h = add('hours', n+' · Hours', i === 0 ? 'hoursBN' : null); hours.push(h); link(l, h);
+    const a = add('address', n+' · Address'); link(l, a);
+  });
+  regions.forEach(r => link(brand, r));
+  const svc = ['Curbside pickup','Returns desk','Gift wrapping','Tailoring','Pharmacy counter','Click & collect'], svcIdx = [];
+  for (let j = 0; j < 30; j++) { const s = add('service', svc[j % 6]); svcIdx.push(s); link(s, j < 20 ? locs[j] : pick(locs)); }
+  const sigNames = ['Manager override','Holiday calendar','Review spike','Duplicate flag','Phone verification','Supplier update','Address change','Stale timer','Customer report'];
+  const signals = sigNames.map((n, i) => add('signal', n, i === 0 ? 'override' : null));
+  hours.forEach((h, i) => {
+    if (i === 0) { link(h, ix.src0); link(h, ix.src1); link(h, ix.src5); return; }
+    link(h, sources[Math.floor(R() * 4)]);
+    for (let t = 0; t < 6 && !link(h, sources[Math.floor(R() * sources.length)]); t++);
+  });
+  channels.forEach(c => { link(c, sources[Math.floor(R() * 3)]); link(c, sources[Math.floor(R() * sources.length)]); });
+  link(policies[0], ix.hoursBN);
+  policies.forEach((p, i) => { for (let k = 0; k < 3; k++) link(p, i === 2 ? pick(svcIdx) : pick(hours)); });
+  link(signals[0], ix.hoursBN); link(signals[0], ix.locBN);
+  signals.slice(1).forEach((s, i) => { link(s, pick(hours)); if (i % 2 === 0) link(s, pick(locs)); });
+  for (let guard = 0; edges.length < 214 && guard < 5000; guard++) {
+    const r = R(); let a, b;
+    if (r < .5) { a = pick(locs); b = pick(locs); } else if (r < .75) { a = pick(hours); b = pick(policies); } else { a = pick(channels); b = pick(channels); }
+    link(a, b);
+  }
+  return {nodes, edges, ix, locs, hours, channels, sources};
+}
+const G = buildGraph();
+const N = G.nodes.length, E = G.edges.length;
+
+/* 3D force-directed layout (deterministic) */
+(function layout(){
+  const R = rng(7), P = [], n = N;
+  for (let i = 0; i < n; i++) { const u = R()*2-1, th = R()*6.2832, s = Math.sqrt(1-u*u), r = Math.cbrt(R()); P.push([s*Math.cos(th)*r, u*r, s*Math.sin(th)*r]); }
+  const story = new Set([G.ix.hoursBN, G.ix.locBN, G.ix.override, G.ix.src0, G.ix.src1, G.ix.src5]);
+  const k = .42; let temp = .22;
+  for (let it = 0; it < 280; it++) {
+    const D = P.map(() => [0,0,0]);
+    for (let i = 0; i < n; i++) for (let j = i+1; j < n; j++) {
+      const dx = P[i][0]-P[j][0], dy = P[i][1]-P[j][1], dz = P[i][2]-P[j][2], d2 = dx*dx+dy*dy+dz*dz+1e-3, f = k*k/d2;
+      D[i][0]+=dx*f; D[i][1]+=dy*f; D[i][2]+=dz*f; D[j][0]-=dx*f; D[j][1]-=dy*f; D[j][2]-=dz*f;
+    }
+    for (const [a, b] of G.edges) {
+      const dx = P[a][0]-P[b][0], dy = P[a][1]-P[b][1], dz = P[a][2]-P[b][2], d = Math.sqrt(dx*dx+dy*dy+dz*dz)+1e-4, f = d/k;
+      D[a][0]-=dx*f; D[a][1]-=dy*f; D[a][2]-=dz*f; D[b][0]+=dx*f; D[b][1]+=dy*f; D[b][2]+=dz*f;
+    }
+    for (let i = 0; i < n; i++) {
+      const g = story.has(i) ? .9 : .16;
+      D[i][0] -= P[i][0]*g; D[i][1] -= P[i][1]*g; D[i][2] -= P[i][2]*g;
+      const len = Math.hypot(D[i][0], D[i][1], D[i][2]) + 1e-9, m = Math.min(len, temp);
+      P[i][0] += D[i][0]/len*m; P[i][1] += D[i][1]/len*m; P[i][2] += D[i][2]/len*m;
+    }
+    temp *= .984;
+  }
+  const c = [0,0,0]; P.forEach(p => { c[0]+=p[0]; c[1]+=p[1]; c[2]+=p[2]; }); c.forEach((_, i) => c[i] /= n);
+  P.forEach(p => { p[0]-=c[0]; p[1]-=c[1]; p[2]-=c[2]; });
+  const rs = P.map(p => Math.hypot(p[0], p[1], p[2])).sort((a, b) => a - b), r95 = rs[Math.floor(n*.93)] || 1;
+  P.forEach(p => { p[0]/=r95; p[1]/=r95; p[2]/=r95; const r = Math.hypot(p[0], p[1], p[2]); if (r > 1.2) { const s = 1.2/r; p[0]*=s; p[1]*=s; p[2]*=s; } });
+  G.P = P;
+})();
+
+/* adjacency, hop distance from the manager-override signal, reach times */
+const adj = G.nodes.map(() => []); G.edges.forEach(([a, b]) => { adj[a].push(b); adj[b].push(a); });
+const hop = new Array(N).fill(-1); hop[G.ix.override] = 0;
+(function(){ const q = [G.ix.override]; while (q.length) { const u = q.shift(); adj[u].forEach(v => { if (hop[v] < 0) { hop[v] = hop[u]+1; q.push(v); } }); } })();
+const HMAX = 2;
+const jit = (() => { const R = rng(99); return Array.from({length: Math.max(N, E)}, () => R()); })();
+const reachAt = hop.map((h, i) => h < 0 || h > HMAX ? 99 : h === 0 ? 0 : h + .2 + jit[i]*.25);
+const touchedList = []; for (let i = 0; i < N; i++) if (hop[i] >= 0 && hop[i] <= HMAX) touchedList.push(i);
+touchedList.sort((a, b) => reachAt[a] - reachAt[b]);
+const TOUCHED = touchedList.length;
+const sparseShare = TOUCHED / N;
+const reachedCount = w => { let c = 0; for (const i of touchedList) if (w >= reachAt[i]) c++; return c; };
+
+/* ============================ numbers for the story ============================ */
+function laborModel(auto){
+  const issues = A.locations * A.issuesPerLoc, today = issues * A.manualMin / 60 * A.rate;
+  const withMesh = issues * (auto * A.oneTapMin + (1-auto) * A.manualMin) / 60 * A.rate;
+  return {issues, today, withMesh, saved: today - withMesh};
+}
+const L = laborModel(A.auto), Llow = laborModel(autoLow), Lhigh = laborModel(autoHigh);
+const computeToday = A.locations * A.recordsPerLoc * A.checksPerYear * A.costPerCheck;
+const computeWith = computeToday * sparseShare, computeSaved = computeToday - computeWith;
+const total = L.saved + computeSaved, totalLow = Llow.saved + computeSaved, totalHigh = Lhigh.saved + computeSaved;
+const RAW = {laborToday: L.today, laborWith: L.withMesh, laborSaved: L.saved, computeToday, computeWith, computeSaved, total};
+
+const money = n => {
+  if (n >= 1e6) return '$' + (n/1e6).toFixed(n >= 1e7 ? 1 : 2).replace(/\.?0+$/, '') + 'M';
+  if (n >= 1e5) return '$' + Math.round(n/1e3) + 'K';
+  if (n >= 1e3) return '$' + (n/1e3).toFixed(1).replace(/\.0$/, '') + 'K';
+  return '$' + Math.round(n);
+};
+const int = n => Math.round(n).toLocaleString('en-US');
+const fmt = {money, int};
+const BIND = {
+  touched: String(TOUCHED), nodes: String(N), untouched: String(N - TOUCHED), edges: String(E),
+  pctLess: Math.round((1 - sparseShare) * 100) + '%',
+  locations: int(A.locations), locationsX10: int(A.locations*10), locationsX100: int(A.locations*100),
+  issuesPerLoc: String(A.issuesPerLoc), manualMin: String(A.manualMin), oneTapMin: String(A.oneTapMin),
+  rate: '$' + A.rate, records: String(A.recordsPerLoc), cadence: A.checksPerYear === 52 ? 'weekly' : A.checksPerYear + '× a year', checkCost: '$' + A.costPerCheck, autoPct: Math.round(A.auto*100) + '%',
+  totalLow: money(totalLow), totalHigh: money(totalHigh), perLoc: '$' + Math.round(total / A.locations),
+  total: money(total), totalX10: ' ≈ ' + money(total*10), totalX100: ' ≈ ' + money(total*100)
+};
+document.querySelectorAll('[data-bind]').forEach(el => { el.textContent = BIND[el.dataset.bind] ?? ''; });
+
+/* ================================ timeline ================================ */
+const ramp = (x, a, b) => { const t = Math.min(1, Math.max(0, (x-a)/(b-a))); return t*t*(3-2*t); };
+const clamp01 = x => Math.min(1, Math.max(0, x));
+const easeOut = t => 1 - Math.pow(1 - t, 3);
+const sec = Array.from(document.querySelectorAll('.scene'));
+const H = G.ix.hoursBN, OV = G.ix.override, S0 = G.ix.src0, S1 = G.ix.src1;
+const tagNodes = (() => { const pick = [H], d = (a, b) => Math.hypot(G.P[a][0]-G.P[b][0], G.P[a][1]-G.P[b][1], G.P[a][2]-G.P[b][2]);
+  while (pick.length < 6) { let best = -1, bd = -1; G.hours.forEach(h => { if (pick.includes(h)) return; const m = Math.min(...pick.map(p => d(h, p))); if (m > bd) { bd = m; best = h; } }); pick.push(best); }
+  return pick; })();
+const ageTags = [['47 days',6,'red'],['31 days',8,'amber'],['58 days',9.5,'red'],['22 days',11,'amber'],['64 days',12.5,'red'],['39 days',14,'amber']].map((t, i) => [tagNodes[i], t[0], t[1], t[2]]);
+const sub = s => s.replace(/\{(\w+)\}/g, (_, k) => BIND[k] ?? '');
+
+const scenes = [
+ { // 0 intro
+  g: lt => ({cx:960, cy:580, s:1.3, tilt:.3, spin:.05, opacity:.34}),
+  caps: [[4.2, 'What today’s knowledge graphs can’t do — and what a living one can.']] },
+ { // 1 problem
+  g: lt => ({cx:1370, cy:520, s:1.12, tilt:.25, spin:.04, age: ramp(lt, 2, 18)*.95, tags: ageTags.filter(t => lt >= t[2]).map(t => ({n:t[0], text:t[1], tone:t[3]}))}),
+  tick: lt => { document.getElementById('days').textContent = Math.round(47*easeOut(clamp01((lt-3)/14))); },
+  caps: [[0.4,'A knowledge graph is a system of record: it holds what you told it, <b>on the day you told it</b>.'],
+         [6.2,'Then the world keeps moving. Hours change. Managers override. Sources drift apart.'],
+         [12.8,'Nothing in the graph notices. It waits for a person to stumble on the problem.'],
+         [18.8,'Usually the customer — or an AI assistant answering for you — <b>finds it first</b>.']] },
+ { // 2 idea
+  g: lt => ({cx:960, cy:520, s:1.15, tilt:.3, spin:.06, follow:.6, age: lt < 1 ? 1 : 0, alive:1, focus: ramp(lt, 8.6, 9.6), wave: lt < 9 ? -1 : Math.min(2.8, (lt-9)/5.5*2.8),
+    labels: [].concat(lt >= 9 ? [{n:OV, text:'Manager override', tone:'red', dir:[-1,.45]}] : [], lt >= 12.5 ? [{n:H, text:'Brooklyn North · Hours', tone:'amber', dir:[1,-.55]}] : [])}),
+  tick: lt => {
+    const p = easeOut(clamp01((lt-9)/3)), A_ = .35+.57*p, C_ = .91-.53*p, U_ = .12+.59*p;
+    [['A',A_],['C',C_],['U',U_]].forEach(([k, v]) => { document.getElementById('v'+k).textContent = v.toFixed(2); document.getElementById('b'+k).style.width = (v*100)+'%'; });
+    const w = lt < 9 ? -1 : Math.min(2.8, (lt-9)/5.5*2.8), n = w < 0 ? 0 : reachedCount(w);
+    document.getElementById('woken').textContent = n; document.getElementById('asleep').textContent = N - n;
+  },
+  caps: [[0.5,'Living Knowledge Mesh gives every fact <b>a pulse</b>.'],
+         [4.6,'Three live signals per fact: how active it is, how confident we are, how uncertain.'],
+         [9.2,'A signal arrives — a manager’s override — and wakes <b>only the facts it touches</b>.'],
+         [15.8,'Not a database that waits. A graph that senses, weighs, proposes and remembers.']] },
+ { // 3 walkthrough
+  g: lt => {
+    const resolved = ramp(lt, 27.5, 29) - ramp(lt, 38.5, 39.5) + ramp(lt, 42, 43);
+    const labels = [];
+    if (lt >= 2.4) {
+      labels.push({n:OV, text: 'Manager override · 6 PM', tone:'red'});
+      labels.push({n:S0, text: resolved > .5 ? 'Published profile · 6 PM ✓' : 'Published profile · 9 PM', tone: resolved > .5 ? 'mint' : 'amber'});
+      labels.push({n:S1, text: resolved > .5 ? 'Maps listing · 6 PM ✓' : 'Maps listing · 8 PM', tone: resolved > .5 ? 'mint' : 'amber'});
+      labels.push({n:H, text:'Brooklyn North · Hours', tone: resolved > .5 ? 'mint' : 'amber'});
+    }
+    return {cx:520, cy:440, s: lt < 30.5 ? 1.7 : .8, tilt:.2, yaw:.5, follow:1, age:0, alive:1,
+      focus: ramp(lt, 9.5, 10.5)*(1 - ramp(lt, 30.5, 31.5)), wave: lt < 9.5 ? -1 : Math.min(2.8, (lt-9.5)/5*2.8),
+      conflict: ramp(lt, 2.4, 3.6)*(1 - resolved), resolved, channels: ramp(lt, 31.5, 32.5), labels};
+  },
+  tick: lt => {
+    const marks = [2, 9.5, 16.5, 24.5, 31.5], steps = document.querySelectorAll('.step');
+    let cur = -1; marks.forEach((m, i) => { if (lt >= m) cur = i; });
+    steps.forEach((el, i) => { el.classList.toggle('active', i === cur); el.classList.toggle('done', i < cur); });
+    const rev = lt >= 38.5 && lt < 42, st = document.getElementById('ledState');
+    st.textContent = rev ? 'REVERSED' : lt >= 42 ? 'REPLAYED ✓' : 'ACTIVE';
+    document.getElementById('ledText').textContent = rev ? 'hours → back to 9:00 PM' : 'hours → 6:00 PM';
+    st.className = 'tag state ' + (rev ? 'amber' : 'mint');
+    const good = (lt >= 33 && !rev);
+    document.getElementById('aiWrong').style.cssText = 'top:756px;width:800px;left:110px;transition:opacity .5s;opacity:' + ((lt >= 3 && !good) ? 1 : 0);
+    document.getElementById('aiRight').style.cssText = 'top:756px;width:800px;left:110px;transition:opacity .5s;opacity:' + (good ? 1 : 0);
+  },
+  caps: [[0.4,'Take one real-world case: a manager overrides the <b>Christmas Eve</b> closing time.'],
+         [5.2,'The mesh sees three sources disagree — and that only one of them is dated.'],
+         [10.2,'It wakes just the related facts and gathers their evidence.'],
+         [17,'A small model reads only that evidence and drafts a fix, with its sources.'],
+         [25,'Then a person decides. <b>The mesh proposes; people approve.</b>'],
+         [32,'Once approved, every channel gets the right answer — including AI assistants.'],
+         [38.2,'And every decision is an event that can be <b>undone and replayed</b>.']] },
+ { // 4 use cases
+  g: lt => ({cx:960, cy:560, s:1.5, tilt:.3, spin:.05, alive:1, opacity:.22}),
+  caps: [[1,'The more channels and AI assistants quote your data, the more a stale fact costs.'],
+         [12,'Same pattern each time: <b>notice, weigh the evidence, propose, let a person decide.</b>']] },
+ { // 5 efficiency
+  g: lt => ({cx:960, cy:560, s:1.5, tilt:.3, spin:.04, alive:1, opacity:.1}),
+  tick: lt => {
+    const hotN = Math.floor(N * easeOut(clamp01((lt-2)/5))), coolN = Math.floor(TOUCHED * clamp01((lt-9.5)/3.5));
+    syncDots(dotsHot, hotN, 'hot'); syncDots(dotsCool, coolN, 'cool');
+    document.getElementById('cntHot').textContent = hotN + ' / ' + N; document.getElementById('cntCool').textContent = coolN + ' / ' + N;
+  },
+  caps: [[0.6,'The obvious AI approach: <b>re-read every record, every time.</b>'],
+         [8.6,'The mesh does what a neighborhood does: only facts connected to a change are re-evaluated.'],
+         [15.5,'The expensive part — the model — runs only when <b>judgement is actually needed</b>.']] },
+ { // 6 value
+  g: lt => ({cx:960, cy:560, s:1.5, tilt:.3, spin:.04, alive:1, opacity:.1}),
+  caps: [[0.5,'A plain back-of-envelope, <b>with every assumption on the table</b>.'],
+         [10.5,'Today each issue costs about {manualMin} minutes of someone’s time. With a one-tap review, {autoPct} of them drop to {oneTapMin}.'],
+         [19.5,'Add the AI compute you avoid by not re-reading everything.'],
+         [26,'Roughly <b>{total} a year</b> for {locations} locations — and it scales with footprint.'],
+         [33,'None of this counts the bigger upside: fewer lost visits, better AI answers.']] },
+ { // 7 status
+  g: lt => ({cx:960, cy:560, s:1.4, tilt:.3, spin:.04, alive:1, opacity:.1}),
+  caps: [[1,'This is a working research prototype on synthetic data — <b>not a finished product</b>.'],
+         [9,'The honest next step is a read-only pilot, so these numbers become measurements.']] },
+ { // 8 close
+  g: lt => ({cx:960, cy:520, s:1.25, tilt:.3, spin:.06, alive:1, opacity:.5}),
+  caps: [[1,'Don’t just store what you know — <b>notice when it stops being true</b>.']] }
+];
+
+/* ---- runtime state: durations, offsets, cue lists ---- */
+let total_t = 0;
+sec.forEach((el, i) => {
+  const s = scenes[i]; s.el = el; s.name = el.dataset.name; s.dur = parseFloat(el.dataset.dur); s.start = total_t; total_t += s.dur;
+  s.cues = Array.from(el.querySelectorAll('[data-t]')).filter(e => e.classList.contains('cue')).map(e => ({e, t: parseFloat(e.dataset.t), out: e.dataset.out ? parseFloat(e.dataset.out) : Infinity, on: null}));
+  s.counts = Array.from(el.querySelectorAll('[data-count]')); s.bars = Array.from(el.querySelectorAll('[data-bar]'));
+});
+const TOTAL = total_t;
+
+/* rail */
+const rail = document.getElementById('rail');
+scenes.forEach(s => { const d = document.createElement('div'); d.className = 'seg'; d.style.flex = s.dur + ' 1 0'; d.innerHTML = '<div class="bar"><i></i></div><span>' + s.name.toUpperCase() + '</span>'; rail.appendChild(d); s.seg = d; s.fill = d.querySelector('i'); });
+
+/* dots for the efficiency scene */
+const dotsHot = document.getElementById('dotsHot'), dotsCool = document.getElementById('dotsCool');
+for (let i = 0; i < N; i++) { dotsHot.appendChild(document.createElement('i')); dotsCool.appendChild(document.createElement('i')); }
+const dotsState = new Map();
+const rankOf = new Array(N).fill(-1); touchedList.forEach((n, r) => { rankOf[n] = r; });
+function syncDots(host, n, key){
+  if (dotsState.get(key) === n) return; dotsState.set(key, n);
+  const ch = host.children;
+  for (let i = 0; i < N; i++) ch[i].classList.toggle('on', key === 'hot' ? i < n : (rankOf[i] >= 0 && rankOf[i] < n));
+}
+
+/* ================================ mesh renderer ================================ */
+const canvas = document.getElementById('mesh'), ctx = canvas.getContext('2d');
+const stage = document.getElementById('stage');
+let bk = 1;
+function resize(){
+  const k = Math.min(innerWidth/1920, innerHeight/1080), dpr = window.devicePixelRatio || 1;
+  stage.style.transform = 'translate(-50%,-50%) scale(' + k + ')';
+  bk = Math.min(k*dpr, 1.6); canvas.width = Math.round(1920*bk); canvas.height = Math.round(1080*bk);
+}
+addEventListener('resize', resize);
+
+const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const TYPE = {brand:[236,246,255,9], region:[183,164,255,7.5], location:[120,231,243,6.5], hours:[255,200,121,5.6], address:[150,172,194,3.4], service:[126,166,192,3.6], source:[154,239,192,5.6], channel:[255,158,200,5.4], policy:[183,164,255,4.8], signal:[255,130,145,6]};
+const GRAY = [108,119,132];
+const TONE = {amber:[255,200,121], red:[255,130,145], mint:[154,239,192], cyan:[120,231,243]};
+const ageF = (() => { const R = rng(5); return Array.from({length:N}, () => .45 + R()*.55); })();
+const edgeFlow = (() => { const R = rng(11); return Array.from({length:E}, () => ({on: R() < .3, spd: .12 + R()*.2, ph: R()})); })();
+const DEF = {cx:960, cy:540, s:1, tilt:.3, spin:.05, follow:0, age:0, alive:0, focus:0, opacity:1, yaw:null, wave:-1, conflict:0, resolved:0, channels:0, tags:[], labels:[]};
+const SMOOTH = {cx:2.6, cy:2.6, s:2.2, tilt:2, spin:2, follow:2.5, age:1.5, alive:1.6, focus:3, opacity:2.4};
+const cur = Object.assign({}, DEF); let curInit = false, yaw = .4, gtime = 0;
+let tgt = Object.assign({}, DEF);
+const mix = (a, b, t) => [a[0]+(b[0]-a[0])*t, a[1]+(b[1]-a[1])*t, a[2]+(b[2]-a[2])*t];
+const rgba = (c, a) => 'rgba(' + (c[0]|0) + ',' + (c[1]|0) + ',' + (c[2]|0) + ',' + a.toFixed(3) + ')';
+const sx = new Float32Array(N), sy = new Float32Array(N), sz = new Float32Array(N), sp = new Float32Array(N);
+
+function drawLabel(x, y, text, tone, alpha, size, cxF, cyF, dir){
+  if (alpha <= .02) return;
+  ctx.font = '700 ' + size + 'px Manrope, system-ui, sans-serif';
+  const w = ctx.measureText(text).width + 24, h = size + 16;
+  let dx = x - cxF, dy = y - cyF, len = Math.hypot(dx, dy);
+  if (dir) { dx = dir[0]; dy = dir[1]; len = Math.hypot(dx, dy); } else if (len < 30) { dx = 0; dy = -1; len = 1; }
+  dx /= len; dy /= len;
+  let lx = x + dx*34, ly = y + dy*34;
+  if (dx < 0) lx -= w; ly -= h/2;
+  const c = TONE[tone] || TONE.cyan;
+  ctx.globalAlpha = alpha;
+  ctx.strokeStyle = rgba(c, .5); ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(x + dx*10, y + dy*10); ctx.lineTo(dx < 0 ? lx + w : lx, ly + h/2); ctx.stroke();
+  ctx.fillStyle = 'rgba(8,13,21,.9)'; ctx.strokeStyle = rgba(c, .75);
+  ctx.beginPath(); ctx.roundRect(lx, ly, w, h, 10); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = rgba(c.map(v => v*.25 + 255*.75), 1); ctx.textBaseline = 'middle'; ctx.fillText(text, lx + 12, ly + h/2 + 1);
+  ctx.globalAlpha = 1;
+}
+
+function frame(dt, anim){
+  /* ease camera/state toward the scene's targets */
+  if (!curInit) { Object.assign(cur, tgt); if (tgt.yaw != null) yaw = tgt.yaw; curInit = true; }
+  for (const k in SMOOTH) cur[k] += (tgt[k] - cur[k]) * (1 - Math.exp(-dt*SMOOTH[k]));
+  if (tgt.yaw != null) yaw += (tgt.yaw - yaw) * (1 - Math.exp(-dt*1.2)); else if (anim) yaw += cur.spin * dt * (RM ? .3 : 1);
+  if (anim) gtime += dt;
+  const wave = tgt.wave, hasWave = wave >= 0, focus = hasWave ? cur.focus : 0;
+  const alive = cur.alive, age = cur.age, T = gtime;
+
+  ctx.setTransform(bk, 0, 0, bk, 0, 0); ctx.clearRect(0, 0, 1920, 1080);
+  ctx.globalAlpha = cur.opacity;
+
+  const cy_ = Math.cos(yaw), sy_ = Math.sin(yaw), cp = Math.cos(cur.tilt), sp_ = Math.sin(cur.tilt);
+  const rot = p => { const x = p[0]*cy_ + p[2]*sy_, z0 = -p[0]*sy_ + p[2]*cy_, y = p[1]*cp - z0*sp_, z = p[1]*sp_ + z0*cp; return [x, y, z]; };
+  const fp = rot(G.P[H]), Rpx = 360*cur.s;
+  for (let i = 0; i < N; i++) {
+    const r = rot(G.P[i]), x = r[0] - fp[0]*cur.follow, y = r[1] - fp[1]*cur.follow, z = Math.min(1.7, r[2] - fp[2]*cur.follow);
+    const pr = 2.6/(2.6 - z); sx[i] = cur.cx + x*Rpx*pr; sy[i] = cur.cy + y*Rpx*pr; sz[i] = z; sp[i] = pr;
+  }
+  const depth = i => Math.min(1, Math.max(.25, .62 + sz[i]*.4));
+  const reached = i => hasWave && reachAt[i] <= wave;
+  const inTouch = i => hop[i] >= 0 && hop[i] <= HMAX;
+
+  /* edges */
+  ctx.lineCap = 'round';
+  for (let e = 0; e < E; e++) {
+    const a = G.edges[e][0], b = G.edges[e][1];
+    const d = (depth(a) + depth(b))/2;
+    let dim = 1; if (hasWave && !(inTouch(a) && inTouch(b))) dim = 1 - focus*.86;
+    let al = (.07 + .15*d) * (1 - age*.35) * dim;
+    ctx.strokeStyle = rgba(mix([120,160,196], GRAY, age*.8), al); ctx.lineWidth = 1.1*Math.min(1.5, (sp[a]+sp[b])/2);
+    ctx.beginPath(); ctx.moveTo(sx[a], sy[a]); ctx.lineTo(sx[b], sy[b]); ctx.stroke();
+    if (hasWave && inTouch(a) && inTouch(b) && hop[a] !== hop[b]) {
+      const lo = hop[a] < hop[b] ? a : b, hi = lo === a ? b : a, st = hop[lo] + jit[e]*.15, p = clamp01((wave - st)/.85);
+      if (p > 0) {
+        const x2 = sx[lo] + (sx[hi]-sx[lo])*p, y2 = sy[lo] + (sy[hi]-sy[lo])*p;
+        ctx.strokeStyle = rgba([120,231,243], .8); ctx.lineWidth = 2.4*Math.min(1.5, sp[lo]);
+        ctx.beginPath(); ctx.moveTo(sx[lo], sy[lo]); ctx.lineTo(x2, y2); ctx.stroke();
+        if (p < 1) { ctx.fillStyle = 'rgba(255,255,255,.95)'; ctx.beginPath(); ctx.arc(x2, y2, 4.2*sp[lo], 0, 6.283); ctx.fill(); }
+      }
+    }
+    if (alive > .02 && edgeFlow[e].on && !RM) {
+      const f = edgeFlow[e], p = (T*f.spd + f.ph) % 1;
+      ctx.fillStyle = rgba([150,238,250], .62*alive*d*dim); ctx.beginPath(); ctx.arc(sx[a] + (sx[b]-sx[a])*p, sy[a] + (sy[b]-sy[a])*p, 2*Math.min(1.5, sp[a]), 0, 6.283); ctx.fill();
+    }
+  }
+  /* conflict / resolved edges */
+  if (cur.opacity > 0 && (tgt.conflict > .01 || tgt.resolved > .01)) {
+    const trio = [S0, S1, OV], cc = tgt.conflict, rr = tgt.resolved, col = rr > cc ? TONE.mint : TONE.amber, k = Math.max(cc, rr);
+    ctx.setLineDash(rr > cc ? [] : [10, 9]); ctx.lineDashOffset = -T*26; ctx.lineWidth = 3.4; ctx.strokeStyle = rgba(col, .9*k);
+    trio.forEach(n => { ctx.beginPath(); ctx.moveTo(sx[H], sy[H]); ctx.lineTo(sx[n], sy[n]); ctx.stroke(); });
+    ctx.setLineDash([]);
+  }
+
+  /* nodes (back to front) */
+  const order = Array.from({length:N}, (_, i) => i).sort((a, b) => sz[a] - sz[b]);
+  for (const i of order) {
+    const t = TYPE[G.nodes[i].type], d = depth(i);
+    let col = mix([t[0], t[1], t[2]], GRAY, Math.min(1, age*ageF[i]*1.3));
+    let r = t[3] * 1.22 * sp[i] * (.72 + .28*cur.s) * (1 + (RM ? 0 : .13*alive*Math.sin(T*2 + i)));
+    let al = (.45 + .55*d) * (1 - age*.28*ageF[i]);
+    let glow = alive*.55;
+    if (hasWave) {
+      if (reached(i)) {
+        const tt = wave - reachAt[i], flash = Math.max(0, 1 - tt/.5);
+        col = mix(col, [140,240,250], .55); r *= 1.35 + flash*.7; al = 1; glow = 1.6 + flash*1.4;
+        if (flash > 0) { ctx.strokeStyle = rgba([180,250,255], flash*.8); ctx.lineWidth = 2.2; ctx.beginPath(); ctx.arc(sx[i], sy[i], r*2.2 + (1-flash)*26, 0, 6.283); ctx.stroke(); }
+      } else al *= 1 - focus*.82;
+    }
+    ctx.globalAlpha = cur.opacity * Math.min(1, al*1.2);
+    if (glow > .05) { ctx.fillStyle = rgba(col, .16*Math.min(glow, 2)); ctx.beginPath(); ctx.arc(sx[i], sy[i], r*3.1, 0, 6.283); ctx.fill(); }
+    ctx.fillStyle = rgba(col, 1); ctx.beginPath(); ctx.arc(sx[i], sy[i], r, 0, 6.283); ctx.fill();
+  }
+  ctx.globalAlpha = cur.opacity;
+
+  /* conflict rings */
+  if (tgt.conflict > .01 || tgt.resolved > .01) {
+    const rr = tgt.resolved, cc = tgt.conflict, col = rr > cc ? TONE.mint : TONE.amber, k = Math.max(cc, rr);
+    [[H, 1], [S0, .7], [S1, .7], [OV, .8]].forEach(([n, sc]) => {
+      const pulse = (T*.9 + n*.13) % 1, base = 17*sp[n]*sc*(.72 + .28*cur.s);
+      ctx.strokeStyle = rgba(rr > cc ? TONE.mint : (n === OV ? TONE.red : col), .85*k); ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(sx[n], sy[n], base, 0, 6.283); ctx.stroke();
+      if (rr <= cc) { ctx.strokeStyle = rgba(col, (1-pulse)*.55*k); ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(sx[n], sy[n], base + pulse*34, 0, 6.283); ctx.stroke(); }
+    });
+  }
+  /* channel pulses */
+  if (tgt.channels > .01) {
+    G.channels.forEach((n, j) => {
+      const ph = (T*.55 + j*.11) % 1; ctx.strokeStyle = rgba(TONE.mint, (1-ph)*.85*tgt.channels); ctx.lineWidth = 2.6;
+      ctx.beginPath(); ctx.arc(sx[n], sy[n], 10*sp[n] + ph*46, 0, 6.283); ctx.stroke();
+      ctx.fillStyle = rgba(TONE.mint, .95*tgt.channels); ctx.beginPath(); ctx.arc(sx[n], sy[n], 7*sp[n], 0, 6.283); ctx.fill();
+    });
+  }
+  /* age tags + labels */
+  ctx.globalAlpha = 1;
+  (tgt.tags || []).forEach(t => drawLabel(sx[t.n], sy[t.n], t.text, t.tone, Math.min(1, cur.opacity*1.1)*(.55 + .45*depth(t.n)), 20, cur.cx, cur.cy));
+  (tgt.labels || []).forEach(l => drawLabel(sx[l.n], sy[l.n], l.text, l.tone, cur.opacity*(.6 + .4*depth(l.n)), 23, cur.cx, cur.cy, l.dir));
+  ctx.globalAlpha = 1;
+}
+
+/* ================================ player ================================ */
+let T = 0, paused = false, ended = false, curScene = -1, lastCapKey = '', capTimer = 0;
+const cap = document.getElementById('cap'), clock = document.getElementById('clock');
+const sceneAt = t => { for (let i = scenes.length - 1; i >= 0; i--) if (t >= scenes[i].start) return i; return 0; };
+const mmss = s => Math.floor(s/60) + ':' + String(Math.floor(s%60)).padStart(2, '0');
+
+function setCaption(key, html){
+  if (key === lastCapKey) return; lastCapKey = key;
+  cap.classList.add('out'); clearTimeout(capTimer);
+  capTimer = setTimeout(() => { cap.innerHTML = html; cap.classList.remove('out'); }, html ? 200 : 0);
+}
+function enterScene(i){
+  curScene = i; sec.forEach((el, k) => el.classList.toggle('on', k === i));
+  scenes.forEach((s, k) => s.seg.classList.toggle('cur', k === i));
+  scenes[i].cues.forEach(c => { c.on = null; });
+}
+function step(dt){
+  if (!paused && !ended) { T += dt; if (T >= TOTAL) { T = TOTAL - .001; ended = true; } }
+  const i = sceneAt(T); if (i !== curScene) enterScene(i);
+  const s = scenes[i], lt = Math.min(T - s.start, s.dur);
+  s.cues.forEach(c => { const on = lt >= c.t && lt < c.out; if (on !== c.on) { c.on = on; c.e.classList.toggle('in', on); } });
+  s.counts.forEach(e => { const p = easeOut(clamp01((lt - parseFloat(e.dataset.t))/parseFloat(e.dataset.dur || 1.5))); e.textContent = fmt[e.dataset.fmt](RAW[e.dataset.count]*p); });
+  s.bars.forEach(e => { const p = easeOut(clamp01((lt - parseFloat(e.dataset.t))/parseFloat(e.dataset.dur || 1.5))); e.style.width = (RAW[e.dataset.bar]/RAW[e.dataset.of]*100*p) + '%'; });
+  if (s.tick) s.tick(lt);
+  tgt = Object.assign({}, DEF, s.g(lt));
+  let ck = null; for (const c of s.caps) if (lt >= c[0]) ck = c;
+  setCaption(i + ':' + (ck ? ck[0] : -1), ck ? sub(ck[1]) : '');
+  scenes.forEach((sc, k) => { sc.fill.style.width = (k < i ? 100 : k === i ? clamp01(lt/sc.dur)*100 : 0) + '%'; });
+  clock.textContent = mmss(T) + ' / ' + mmss(TOTAL);
+  frame(dt, !paused);
+}
+function seek(t){ T = Math.min(Math.max(0, t), TOTAL - .001); ended = false; lastCapKey = ''; curInit = true; }
+const nextScene = () => { const i = sceneAt(T); if (i < scenes.length - 1) seek(scenes[i+1].start); };
+const prevScene = () => { const i = sceneAt(T); seek(T - scenes[i].start > 2.5 || i === 0 ? scenes[i].start : scenes[i-1].start); };
+const setPaused = p => { paused = p; document.getElementById('stage').classList.toggle('paused', p); document.getElementById('bPlay').textContent = p ? '▶' : '❚❚'; };
+const toggleFull = () => { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen && document.documentElement.requestFullscreen().catch(() => {}); };
+
+addEventListener('keydown', e => {
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  const k = e.key;
+  if (k === ' ' || k === 'k' || k === 'K') { setPaused(!paused); e.preventDefault(); }
+  else if (k === 'ArrowRight' || k === 'n' || k === 'N') nextScene();
+  else if (k === 'ArrowLeft' || k === 'p' || k === 'P') prevScene();
+  else if (k === 'r' || k === 'R' || k === 'Home') { seek(0); setPaused(false); }
+  else if (k === 'f' || k === 'F') toggleFull();
+});
+document.getElementById('bPrev').onclick = prevScene; document.getElementById('bNext').onclick = nextScene;
+document.getElementById('bPlay').onclick = () => setPaused(!paused);
+document.getElementById('bRestart').onclick = () => { seek(0); setPaused(false); };
+document.getElementById('bFull').onclick = toggleFull;
+
+/* the cursor and controls hide themselves when the mouse is still */
+let idleTimer = 0;
+const wake = () => { document.body.classList.add('hover'); document.body.classList.remove('idle'); clearTimeout(idleTimer); idleTimer = setTimeout(() => { document.body.classList.remove('hover'); document.body.classList.add('idle'); }, 2200); };
+addEventListener('mousemove', wake); addEventListener('touchstart', wake, {passive:true});
+document.body.classList.add('idle');
+
+/* start: ?t=<seconds> and ?scene=<n> jump for rehearsal; ?autoplay=0 starts paused */
+resize();
+const startT = qs.get('t') ? parseFloat(qs.get('t')) : qs.get('scene') ? (scenes[Math.min(scenes.length-1, parseInt(qs.get('scene'), 10) || 0)] || scenes[0]).start : 0;
+seek(startT || 0);
+if (qs.get('autoplay') === '0') setPaused(true);
+let last = performance.now();
+function loop(now){ const dt = Math.min(.1, (now - last)/1000); last = now; step(dt); requestAnimationFrame(loop); }
+const fontsReady = (document.fonts && document.fonts.ready) ? Promise.race([document.fonts.ready, new Promise(r => setTimeout(r, 1500))]) : Promise.resolve();
+fontsReady.then(() => { last = performance.now(); requestAnimationFrame(loop); });
+window.__lkm = {seek, setPaused, TOTAL, scenes, N, E, TOUCHED, RAW, BIND};
+})();
+</script>
+</body>
+</html>
