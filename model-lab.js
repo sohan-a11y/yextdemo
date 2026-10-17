@@ -58,9 +58,10 @@ function progressCallback(p){
  }
 }
 async function fetchWithTimeout(url,options,timeoutMs){
- const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),timeoutMs||12000);
- try{return await fetch(url,{...(options||{}),signal:controller.signal})}
- finally{clearTimeout(timer)}
+ const controller=typeof AbortController==="function"?new AbortController():null;
+ const timer=controller?setTimeout(()=>controller.abort(),timeoutMs||12000):null;
+ try{return await fetch(url,{...(options||{}),...(controller?{signal:controller.signal}:{})})}
+ finally{if(timer!==null)clearTimeout(timer)}
 }
 async function runDiagnostics(){
  const button=$("#diagnosticBtn"),details=$("#diagnosticDetails");
@@ -69,8 +70,8 @@ async function runDiagnostics(){
  const checks=[];
  const add=(name,ok,detail,optional)=>checks.push({name,ok:!!ok,detail,optional:!!optional});
  add("Secure context",!!window.isSecureContext,window.isSecureContext?"HTTPS/secure browser context available":"Open the site over HTTPS to allow module loading and WebGPU");
- add("WebGPU",true,navigator.gpu?"Available; WebGPU is an option":"Unavailable; choose CPU/WASM instead",!navigator.gpu);
- add("Browser cache",typeof caches!=="undefined"&&typeof caches.open==="function",typeof caches!=="undefined"?"Cache API is available":"Cache API is unavailable; downloads may not persist",typeof caches==="undefined");
+ add("WebGPU",true,navigator.gpu?"Available; WebGPU is an option":"Unavailable; choose CPU/WASM instead",true);
+ add("Browser cache",typeof caches!=="undefined"&&typeof caches.open==="function",typeof caches!=="undefined"?"Cache API is available":"Cache API is unavailable; downloads may not persist",true);
  add("Memory estimate API",!!(window.crossOriginIsolated&&window.performance&&typeof performance.measureUserAgentSpecificMemory==="function"),window.crossOriginIsolated?"Page-memory API "+(performance.measureUserAgentSpecificMemory?"available":"not exposed by this browser"):"Page is not cross-origin isolated; memory estimate will be unavailable",true);
  const formatTests=[
   ["12-hour time",normalTime("6 PM")==="6 PM"],
