@@ -53,36 +53,39 @@ function color(n){if(n.type==="SIGNAL"||n.type==="ACTION")return "#f7c579";if(n.
 function state(n){return {a:n.a,c:n.c,u:n.u}}
 function setState(n,s){n.a=s.a;n.c=s.c;n.u=s.u}
 function tokenise(s){return String(s||"").toLowerCase().match(/[a-z0-9]+/g)||[]}
-function relevance(n,q){const words=tokenise(q).filter(w=>w.length>2&&!["the","and","for","this","that","with","from","about","into","when","what","where","does","could","would","should"].includes(w));if(!words.length)return 0;const corpus=tokenise([n.name,n.summary,n.source,n.type].join(" "));let hit=0;words.forEach(w=>{if(corpus.includes(w))hit++;else if(w.length>5&&corpus.some(t=>t.startsWith(w.slice(0,4))))hit+=.35});return clamp(hit/Math.max(2,words.length*.62),0,1)}
+function relevance(n,q){return window.LKMEngine.relevance(n,q)}
 function hashFallback(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return "fnv1a:"+("00000000"+(h>>>0).toString(16)).slice(-8)}
 async function hashText(s){try{if(window.crypto&&crypto.subtle&&window.TextEncoder){const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s));return "sha256:"+Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,"0")).join("")}}catch(e){}return hashFallback(s)}
 function showToast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove("show"),3400)}
-function save(){try{const states={};nodes.forEach(n=>states[n.id]=state(n));localStorage.setItem(STORE_KEY,JSON.stringify({version:1,states,ledger,cycleCount,totalWrites,selectedModel,latestSignal}));$("#localEngineStatus").textContent="Ready · browser-local storage";$("#localMeter").style.width="9%"}catch(e){$("#localEngineStatus").textContent="Memory only · storage unavailable";$("#localMeter").style.width="4%"}}
-function load(){try{const raw=localStorage.getItem(STORE_KEY);if(!raw)return;const x=JSON.parse(raw);if(x&&x.version===1){if(x.states)nodes.forEach(n=>{if(x.states[n.id])setState(n,x.states[n.id])});ledger=Array.isArray(x.ledger)?x.ledger:[];cycleCount=Number(x.cycleCount)||0;totalWrites=Number(x.totalWrites)||0;selectedModel=x.selectedModel||"laya";latestSignal=x.latestSignal||latestSignal}}catch(e){ledger=[];cycleCount=0;totalWrites=0}}
-async function appendEvent(kind,summary,changes,meta){const parent=ledger.length?ledger[0].digest:"GENESIS";const event={id:"evt-"+Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,7),time:new Date().toISOString(),kind,summary,changes:changes||[],query:meta&&meta.query||"",reverses:meta&&meta.reverses||null,replays:meta&&meta.replays||null,parentDigest:parent};event.digest=await hashText(JSON.stringify(event));ledger.unshift(event);if(ledger.length>250)ledger=ledger.slice(0,250);save();renderAll();return event}
+function save(){try{const states={};nodes.forEach(n=>states[n.id]=state(n));localStorage.setItem(STORE_KEY,JSON.stringify({version:2,states,ledger,cycleCount,totalWrites,selectedModel,latestSignal}));$("#localEngineStatus").textContent="Ready · browser-local storage";$("#localMeter").style.width="9%"}catch(e){$("#localEngineStatus").textContent="Memory only · storage unavailable";$("#localMeter").style.width="4%"}}
+function load(){try{const raw=localStorage.getItem(STORE_KEY);if(!raw)return;const x=JSON.parse(raw);if(x&&(x.version===1||x.version===2)){if(x.states)nodes.forEach(n=>{if(x.states[n.id])setState(n,x.states[n.id])});ledger=Array.isArray(x.ledger)?x.ledger:[];cycleCount=Number(x.cycleCount)||0;totalWrites=Number(x.totalWrites)||0;selectedModel=x.selectedModel||"laya";latestSignal=x.latestSignal||latestSignal}}catch(e){ledger=[];cycleCount=0;totalWrites=0}}
+async function appendEvent(kind,summary,changes,meta){const parent=ledger.length?ledger[0].digest:"GENESIS";const event={id:"evt-"+Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,7),time:new Date().toISOString(),kind,summary,changes:changes||[],query:meta&&meta.query||"",reverses:meta&&meta.reverses||null,replays:meta&&meta.replays||null,metrics:meta&&meta.metrics||null,parentDigest:parent};event.digest=await hashText(JSON.stringify(event));ledger.unshift(event);if(ledger.length>250)ledger=ledger.slice(0,250);save();renderAll();return event}
 function averageNeighbor(n,prev){const ids=adjacency[n.id]||[];return ids.length?ids.reduce((s,id)=>s+(prev[id]||0),0)/ids.length:n.a}
 async function runCycle(query){
  query=(query||"").trim();if(query)latestSignal=query;
- const prev={};nodes.forEach(n=>prev[n.id]=n.a);
- const changes=[];
- nodes.forEach(n=>{
-  const nbr=averageNeighbor(n,prev),r=relevance(n,query),own=n.a,conf=n.c,unc=n.u;
-  // V1 uses shared, hand-set weights: a testable NCA-inspired transition, not learned weights.
-  const h1=Math.tanh(.82*own+.43*nbr+.25*conf-.39*unc+.72*r-.67);
-  const h2=Math.tanh(-.24+.26*own+.77*nbr-.16*unc+.61*r);
-  const h3=Math.tanh(.61*conf+.37*nbr-.7*unc+.41*r-.28);
-  const a=clamp(.72*own+.28*(.5+.27*h1+.25*h2+.1*h3),.02,.99);
-  const c=clamp(conf+.052*r+.013*(nbr-.5)-.011*unc,.05,.99);
-  const u=clamp(unc-.034*r+.008*(.5-nbr),.03,.98);
-  const delta=Math.abs(a-own)+Math.abs(c-conf)+Math.abs(u-unc);
-  if(delta>=.018)changes.push({nodeId:n.id,before:{a:own,c:conf,u:unc},after:{a,c,u},delta:Number(delta.toFixed(5)),relevance:Number(r.toFixed(3))});
- });
+ const proposal=window.LKMEngine.transition(nodes,adjacency,query);
+ const changes=proposal.changes;
  changes.forEach(ch=>setState(byId[ch.nodeId],ch.after));cycleCount++;totalWrites+=changes.length;
- await appendEvent("nca_cycle",changes.length?"Local state cycle updated "+changes.length+" of "+nodes.length+" knowledge objects":"Local state cycle ran; no state exceeded the sparse-write threshold",changes,{query:query||"local propagation"});
-selectNode(selectedId);renderMeshes();showToast("Local cycle complete: "+changes.length+" sparse node writes. No LLM or network request was made.");
+ await appendEvent("nca_cycle",changes.length?"Local state cycle updated "+changes.length+" of "+nodes.length+" knowledge objects":"Local state cycle ran; no state exceeded the sparse-write threshold",changes,{query:query||"local propagation",metrics:proposal.metrics});
+ selectNode(selectedId);renderMeshes();showToast("Evaluated "+proposal.metrics.nodesEvaluated+" nodes; journaled "+changes.length+" sparse writes. No LLM or network request was made.");
 }
-async function reverseEvent(id){const e=ledger.find(x=>x.id===id);if(!e||!e.changes||!e.changes.length){showToast("This event has no reversible state changes.");return}const changes=[];e.changes.forEach(ch=>{const n=byId[ch.nodeId];if(!n||!ch.before||!ch.after)return;const before=state(n);setState(n,ch.before);changes.push({nodeId:n.id,before,after:state(n),delta:Math.abs(before.a-ch.before.a)+Math.abs(before.c-ch.before.c)+Math.abs(before.u-ch.before.u)})});if(!changes.length){showToast("No matching node states were available to reverse.");return}totalWrites+=changes.length;await appendEvent("reversal","Compensating event reversed state changes from "+e.id,changes,{reverses:e.id});showToast("Reversal recorded. The original event remains in the journal.")}
-async function replayEvent(id){const e=ledger.find(x=>x.id===id);if(!e||!e.changes||!e.changes.length){showToast("This event has no node-state changes to replay.");return}const changes=[];e.changes.forEach(ch=>{const n=byId[ch.nodeId];if(!n||!ch.after)return;const before=state(n);setState(n,ch.after);changes.push({nodeId:n.id,before,after:state(n),delta:Math.abs(before.a-ch.after.a)+Math.abs(before.c-ch.after.c)+Math.abs(before.u-ch.after.u)})});if(!changes.length){showToast("No matching node states were available to replay.");return}totalWrites+=changes.length;await appendEvent("replay","Replay applied the after-state from "+e.id,changes,{replays:e.id});showToast("Replay recorded as a new event; prior history is retained.")}
+}
+async function reverseEvent(id){
+ const e=ledger.find(x=>x.id===id);if(!e||!e.changes||!e.changes.length){showToast("This event has no reversible state changes.");return}
+ const applied=window.LKMEngine.applyRecordedChanges(byId,e.changes,"after","before",true);
+ if(!applied.ok){showToast("Reversal blocked: "+applied.reason);return}
+ const changes=applied.changes;if(!changes.length){showToast("No matching node states were available to reverse.");return}
+ totalWrites+=changes.length;await appendEvent("reversal","Compensating event reversed state changes from "+e.id,changes,{reverses:e.id});
+ showToast("Reversal recorded safely. The original event remains in the journal.")
+}
+async function replayEvent(id){
+ const e=ledger.find(x=>x.id===id);if(!e||!e.changes||!e.changes.length){showToast("This event has no node-state changes to replay.");return}
+ const applied=window.LKMEngine.applyRecordedChanges(byId,e.changes,"before","after",true);
+ if(!applied.ok){showToast("Replay blocked: "+applied.reason);return}
+ const changes=applied.changes;if(!changes.length){showToast("No matching node states were available to replay.");return}
+ totalWrites+=changes.length;await appendEvent("replay","Replay applied the after-state from "+e.id,changes,{replays:e.id});
+ showToast("Replay recorded safely as a new event; prior history is retained.")
+}
 function relativeTime(iso){try{const s=Math.floor(Math.max(0,Date.now()-new Date(iso).getTime())/1000);if(s<60)return s+"s ago";if(s<3600)return Math.floor(s/60)+"m ago";if(s<86400)return Math.floor(s/3600)+"h ago";return new Date(iso).toLocaleDateString()}catch(e){return iso}}
 function selectNode(id){if(!byId[id])return;selectedId=id;renderInspector("#nodeInspector");renderInspector("#nodeInspectorLarge");renderMeshes()}
 function renderInspector(selector){const el=$(selector),n=byId[selectedId]||nodes[0];if(!el||!n)return;const links=(adjacency[n.id]||[]).map(id=>byId[id]).filter(Boolean);el.innerHTML='<span class="node-type">'+n.type+'</span><h3>'+escapeHtml(n.name)+'</h3><p>'+escapeHtml(n.summary)+'</p><div class="node-stats"><div class="mini-stat"><small>Activation</small><strong>'+pct(n.a)+'</strong></div><div class="mini-stat"><small>Confidence</small><strong>'+pct(n.c)+'</strong></div><div class="mini-stat"><small>Uncertainty</small><strong>'+pct(n.u)+'</strong></div></div><div class="source-line"><span>PROVENANCE / SOURCE</span>'+escapeHtml(n.source)+'</div><div class="source-line"><span>CONNECTED OBJECTS ('+links.length+')</span>'+links.slice(0,7).map(x=>'<button class="link-btn" data-select="'+x.id+'" style="padding:3px 5px">'+escapeHtml(x.name)+' ↗</button>').join(" ")+'</div>';el.querySelectorAll("[data-select]").forEach(b=>b.addEventListener("click",()=>selectNode(b.dataset.select)))}
@@ -112,7 +115,7 @@ $("#memoryCycleBtn").addEventListener("click",()=>runCycle($("#signalInput").val
 $("#signalForm").addEventListener("submit",e=>{e.preventDefault();const q=$("#signalInput").value.trim();if(!q){showToast("Enter a signal first.");return}runCycle(q)});
 $("#nodeSearch").addEventListener("input",renderDirectory);
 $("#resetBtn").addEventListener("click",()=>{if(!confirm("Reset the graph state and local journal in this browser? Export JSON first if you want to keep a copy."))return;localStorage.removeItem(STORE_KEY);nodes.forEach(n=>{n.a=n.baseA;n.c=n.baseC;n.u=n.baseU});ledger=[];cycleCount=0;totalWrites=0;latestSignal="Holiday hours conflict at Brooklyn North";$("#signalInput").value=latestSignal;save();renderAll();showToast("Local demo state reset.")});
-$("#exportBtn").addEventListener("click",()=>{const payload={format:"lkm-local-journal-v1",exportedAt:new Date().toISOString(),note:"Synthetic scenario. Browser-local export, not a tamper-proof audit log.",graph:nodes.map(n=>({id:n.id,name:n.name,type:n.type,state:state(n)})),edges,ledger};const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="living-knowledge-mesh-journal.json";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);showToast("Journal exported as JSON to your device.")});
+$("#exportBtn").addEventListener("click",()=>{const payload={format:"lkm-local-journal-v2",exportedAt:new Date().toISOString(),note:"Synthetic scenario. Browser-local export, not a tamper-proof audit log.",graph:nodes.map(n=>({id:n.id,name:n.name,type:n.type,state:state(n)})),edges,ledger};const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="living-knowledge-mesh-journal.json";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);showToast("Journal exported as JSON to your device.")});
 const modelDetails={
 laya:["Recommended role for Laya","Evaluate Laya for typed questions such as “is this record in conflict?” or “which category applies?”. It is a decision model, not a chat LLM. Its checkpoint and runtime must be measured before promising a one-gigabyte ceiling."],
 jev:["Recommended role for Jev","Use a hosted typed-decision API only where approved. Keep credentials server-side, redact sensitive fields, establish data-processing terms and measure cost and latency. This page does not send data to Jev."],
