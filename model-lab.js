@@ -34,9 +34,11 @@ function updatePageMemoryFact(currentBytes){
  const delta=current-basePageMemoryBytes;
  el.textContent=fmtBytes(current)+" (Δ "+(delta>=0?"+":"−")+fmtBytes(Math.abs(delta))+")";
 }
-function initDeviceFacts(){
+async function initDeviceFacts(){
  $("#webgpuFact").textContent=navigator.gpu?"Available":"Not available";
  if(typeof navigator.deviceMemory==="number")$("#deviceRamFact").textContent="~"+navigator.deviceMemory+" GB";
+ basePageMemoryBytes=await samplePageMemory();
+ updatePageMemoryFact(basePageMemoryBytes);
  updateStorage();
 }
 function progressCallback(p){
@@ -66,7 +68,7 @@ async function loadModel(forceDevice){
   transformersEnv=lib.env;
   if(transformersEnv){transformersEnv.useBrowserCache=true;transformersEnv.allowLocalModels=false;}
   generator=await lib.pipeline("text-generation",MODEL_ID,{device,dtype,progress_callback:progressCallback});
-  loadedDevice=device;loadedDtype=dtype;loadMs=performance.now()-started;
+  loadedDevice=device;loadedDtype=dtype;loadMs=performance.now()-started;afterLoadPageMemoryBytes=await samplePageMemory();updatePageMemoryFact(afterLoadPageMemoryBytes);
   $("#readyTag").textContent="MODEL READY";
   $("#readyTag").style.color="var(--mint)";
   $("#readyTag").style.borderColor="#31564e";
