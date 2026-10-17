@@ -34,7 +34,7 @@ textarea{display:block;width:100%;min-height:135px;resize:vertical;background:#0
    <div class="hint">The loading timer includes download, cache access and model initialization. A failed WebGPU attempt can require a separate CPU quantization download if you switch runtimes.</div>
   </section>
   <section class="panel">
-   <h2>Model & device facts</h2><p class="desc">Artifact size is not peak runtime RAM. Browsers do not expose a reliable per-model resident-memory measurement to this page.</p>
+   <h2>Model & device facts</h2><p class="desc">Artifact size is not peak runtime RAM. Where supported, this page samples total page memory. That estimate can omit GPU allocations and is not native process peak RAM.</p>
    <div class="specs">
     <div class="spec"><small>Parameters</small><strong>360M</strong></div>
     <div class="spec"><small>GPU artifact (q4f16)</small><strong>272 MB</strong></div>
@@ -42,6 +42,7 @@ textarea{display:block;width:100%;min-height:135px;resize:vertical;background:#0
     <div class="spec"><small>WebGPU API</small><strong id="webgpuFact">Checking…</strong></div>
     <div class="spec"><small>Approx. device RAM hint</small><strong id="deviceRamFact">Not exposed</strong></div>
     <div class="spec"><small>Browser-origin storage used</small><strong id="storageFact">Not available</strong></div>
+    <div class="spec"><small>Page memory estimate</small><strong id="pageMemoryFact">Checking…</strong></div>
    </div>
    <p class="hint">The device RAM hint is a coarse browser-reported estimate, not model memory usage. Storage usage includes the origin's other stored data and is not the model's exact cache size.</p>
   </section>
