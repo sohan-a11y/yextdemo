@@ -168,7 +168,12 @@ function getStructuredOutputProcessor(prompt){
     reason:{type:"string"}
    },
    required:["decision","conflict","proposed_closing_time","reason"],
-   additionalProperties:false
+   additionalProperties:false,
+   oneOf:[
+    {properties:{decision:{const:"review"},conflict:{const:true},proposed_closing_time:{const:null}},required:["decision","conflict","proposed_closing_time"]},
+    {properties:{decision:{const:"consistent"},conflict:{const:false},proposed_closing_time:{enum:times}},required:["decision","conflict","proposed_closing_time"]},
+    {properties:{decision:{const:"insufficient"},conflict:{const:false},proposed_closing_time:{const:null}},required:["decision","conflict","proposed_closing_time"]}
+   ]
   }
  });
  if(processorCache.size>=8)processorCache.delete(processorCache.keys().next().value);
