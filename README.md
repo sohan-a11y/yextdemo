@@ -31,7 +31,9 @@ The model-lab page dynamically imports the pinned runtime CDN package and downlo
 
 - Overall model-loading progress is displayed separately from per-file downloads. The load control locks after success, and result export is disabled while a load/inference run is in progress.
 - The runtime and device selector lock after a successful load to prevent accidental duplicate model allocations; a failed WebGPU load can still be retried on CPU/WASM.
-- Response validation requires the exact four-key contract and valid normalized time values; time normalization preserves minutes instead of silently rounding them away.
+- Model generation is constrained with `@huggingface/transformers-structured-output@4.3.1` and a JSON Schema: exactly four keys, a fixed decision enum, a boolean conflict flag, a string reason, and a proposed time restricted to normalized times found in the prompt (or `null`). This addresses malformed JSON at generation time; semantic decision accuracy still requires evaluation.
+- The browser import map makes the structured-output package reuse the same pinned Transformers.js 4.3.1 module as the loaded model runtime.
+- Response validation independently requires the exact four-key contract and valid normalized time values; time normalization preserves minutes instead of silently rounding them away.
 - Failed inference attempts are excluded from latency and throughput statistics instead of being recorded as zero-millisecond runs.
 - The results table includes collapsible raw output per case and the exported custom prompt is paired with the result that actually came from it.
 
