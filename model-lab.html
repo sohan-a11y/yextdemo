@@ -56,7 +56,7 @@ Effective date: 2026-10-31
 Published business profile: closes at 8 PM on 2026-10-31.
 Manager override: closes at 6 PM on 2026-10-31.
 Classify whether these comparable sources conflict. Do not choose which source is authoritative.</textarea>
-   <div class="controls" style="margin-top:9px"><button id="inferBtn" class="btn primary" disabled>Run local inference</button><span class="hint" style="margin:0">Maximum 112 new tokens · deterministic decoding</span></div>
+   <div class="controls" style="margin-top:9px"><button id="inferBtn" class="btn primary" disabled>Run local inference</button><span class="hint" style="margin:0">Maximum 112 new tokens · deterministic decoding · one model load per tab</span></div>
    <div class="small-title">Raw model response</div><pre id="customOutput" class="output">Load the model to enable inference.</pre>
    <div class="small-title">Parsed structured result</div><pre id="customParsed" class="output">A JSON result will appear here if the model returns parseable output.</pre>
    <div id="customStatus" class="status">No inference run yet.</div>
@@ -76,7 +76,7 @@ Classify whether these comparable sources conflict. Do not choose which source i
  </div>
  <section class="panel">
   <h2>Evaluation results</h2><p class="desc">Ground truth is intentionally narrow and synthetic. These checks test evidence triage behaviour; they do not establish general model capability or readiness for production data.</p>
-  <div class="table-wrap"><table><thead><tr><th>Case</th><th>Expected</th><th>Model result</th><th>Schema</th><th>Exact</th><th>Latency</th><th>Raw output</th></tr></thead><tbody id="resultRows"><tr><td colspan="6">No tests run.</td></tr></tbody></table></div>
+  <div class="table-wrap"><table><thead><tr><th>Case</th><th>Expected</th><th>Model result</th><th>Schema</th><th>Exact</th><th>Latency</th><th>Raw output</th></tr></thead><tbody id="resultRows"><tr><td colspan="7">No tests run.</td></tr></tbody></table></div>
  </section>
  <div class="privacy"><div style="font-size:16px;color:var(--mint)">◎</div><div><strong>Local inference, external asset download</strong><p>Test prompts are processed in this browser tab; no LLM inference API is called by this page. The JavaScript runtime comes from jsDelivr and model/tokenizer assets come from Hugging Face on first load. Model caching is enabled, but browsers can evict cached files. Do not use confidential or regulated data until the network, cache and privacy setup has been reviewed.</p></div></div>
  <div class="foot">Model: <a href="https://huggingface.co/onnx-community/SmolLM2-360M-Instruct-ONNX" target="_blank" rel="noreferrer">onnx-community/SmolLM2-360M-Instruct-ONNX ↗</a> · Runtime: <a href="https://huggingface.co/docs/transformers.js" target="_blank" rel="noreferrer">Transformers.js ↗</a> · Pinned snapshot <code>fe7c7db4c8921c9e3fa1c65cfd296fb3b1b1a8f9</code> · <span id="runtimeFact">Runtime has not loaded.</span><br>Limit: JavaScript cannot reliably report peak RSS/model RAM. A credible sub-1 GB claim still requires native/process-level profiling on the actual target device.</div>
