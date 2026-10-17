@@ -1,49 +1,71 @@
 # Living Knowledge Mesh (LKM)
 
-**An independent research prototype exploring local AI coordination and reversible learning for enterprise knowledge workflows.**
+**V1 Executive Experience** — an independent, local-first research build exploring sparse knowledge updates, evidence-linked reasoning and reversible state changes.
 
-Live concept demo: deploy this repository to Vercel (static HTML; no build command required).
+Live demo: [living-knowledge-mesh.vercel.app](https://living-knowledge-mesh.vercel.app)  
+Repository: https://github.com/sohan-a11y/yextdemo  
+Version branch: \`v1-executive-experience\`
 
-## What the prototype demonstrates
+## What this version does
 
-- An interactive Three.js 3D network view for synthetic entities, sources and review signals.
-- A human-reviewed discrepancy workflow using a fictional multi-location business dataset.
-- A local state-update simulation inspired by Neural Cellular Automata (NCA).
-- A provenance ledger inspired by the DOTS research direction: individual learning events can be inspected, marked removed and replayed in the UI.
-- A clearly labelled, illustrative benchmark panel for future controlled evaluation.
-- A reference architecture that distinguishes the coordination, reasoning, approval and memory responsibilities.
+- **Interactive 3D knowledge mesh:** a low-dependency canvas projection with rotate, zoom, selectable nodes, type filters and an object inspector.
+- **Local transition cycle:** user-entered operational signals affect activation, confidence and uncertainty through a shared, deterministic NCA-inspired update rule.
+- **Sparse writes:** only nodes whose summed state delta crosses a threshold are journaled.
+- **Reversible memory events:** the browser-local journal records before/after values, a previous-event digest and compensating reversal events. Replay applies a previous after-state as a new event.
+- **Local persistence:** graph state, selected model policy and journal are saved in browser \`localStorage\`.
+- **Portable evidence:** export the journal, graph states and links as JSON.
+- **CEO-facing product story:** business outcomes, evaluation protocol, model routing choices and architecture are explained without presenting research hypotheses as measured results.
+- **Responsive interface:** desktop and mobile layouts, keyboard-selectable model cards, focus styles and reduced-motion support.
 
 ## Quick start
 
-The current demo is a dependency-light static site:
+This is a static website with no build step or package installation.
 
-1. Clone this repository.
-2. Open `index.html` in a browser, or run any static file server.
-3. For local hosting with Python: `python -m http.server 8000`, then open `http://localhost:8000`.
-4. For Vercel, import this repository as a new project. Framework preset: **Other**. Leave the build command empty; output the repository root.
+1. Clone the repository.
+2. Open \`index.html\` in a browser, or serve the root directory using any static file server.
+3. For example, run \`python -m http.server 8000\` and open \`http://localhost:8000\`.
+4. The app loads \`app.js\` from the same directory.
 
-The 3D renderer loads Three.js from jsDelivr. If that module cannot load or WebGL is unavailable, the app displays a canvas-based visualization fallback.
+To deploy on Vercel, use the repository root as the output directory and leave the build and install commands empty. The V1 deployment may be uploaded as a source snapshot; connect the GitHub repository separately if automatic deployments on branch pushes are desired.
 
-## Important scope and limitations
+## The NCA relationship, precisely stated
 
-This is a **front-end workflow prototype** using synthetic data and deterministic client-side simulation. It does **not** currently connect to Yext, call a real LLM, mutate a remote knowledge graph, or implement DOTS sparse neural-memory training. The "approve", "learn", "remove", "replay", and benchmark controls illustrate application flow only. Benchmark figures are explicitly illustrative, not empirical results.
+The V1 transition cycle is a **real executable local state-update loop inspired by neural cellular automata**, using shared hand-set weights and neighborhood summaries. It is not a trained neural cellular automaton, not a learned biological/living system, and not evidence of emergent intelligence. Its role at this stage is to make neighborhood-local state change, sparse writes and rollback inspectable and testable.
 
-No Yext credentials or API keys are required. No production write action is performed.
+The graph nodes are synthetic business facts and system concepts. A signal affects the state transition by relevance to node text and by linked neighborhood state. The implementation is deterministic for a given current state and signal, apart from event identifiers and timestamps.
 
-## Proposed next engineering steps
+## LLM and memory status
 
-1. Add a deterministic Python evaluation harness and publish synthetic fixtures and raw results.
-2. Replace the simulated explanation worker with a local or authorized LLM adapter using validated structured outputs.
-3. Build a separate test harness for the actual DOTS sparse-memory mechanism and verify its exact-removal assumptions.
-4. Add a read-only Yext API/MCP adapter when authorized credentials and access are available.
-5. Keep every external write behind explicit approval, tenant-scoped authorization, idempotency checks and auditable rollback procedures.
+No LLM weights are downloaded or called in V1. Laya, Jev, SmolLM2 360M and Qwen3 0.6B appear as **model candidates/policy choices**, not live integrated models. Selecting a card only changes a local UI setting.
 
-## Core hypothesis
+The journal persists in the current browser profile. SHA-256 digests are created when Web Crypto is available; a lightweight FNV-1a fallback is used otherwise. This is a local consistency aid only, not a tamper-proof or independently verified audit trail. Browser storage is not shared across users/devices, and browser data can be cleared by the user.
 
-Can local, NCA-inspired state updates focus reasoning on the relevant neighborhood, while an addressable, provenance-rich event ledger makes approved feedback inspectable and reversible?
+## Performance and deployment goals
 
-That is a research question to measure against simple rule-based and centralized LLM baselines, not a performance claim.
+The always-on graph update, journal and visualization require no LLM runtime. This keeps the core lightweight. V1 does not yet publish measured peak RAM or latency results; the architecture target is to keep the serverless UI thin and put any model execution in a separately tested local/browser runtime or approved inference service.
 
-## Attribution
+Quantized model file size is not peak process RAM. A sub-1 GB inference target must be validated with a pinned checkpoint, runtime, context size, tokenizer, concurrency, CPU and a repeatable memory benchmark. Do not bundle large weight files inside Vercel function source bundles.
 
-Created by Sohan Merugu as an independent concept prototype. Not affiliated with, endorsed by, or an official product of Yext.
+## Business-value evaluation
+
+This repository does not claim measured business ROI, accuracy gains, latency gains or reduced token use. Before such claims are made, compare:
+1. deterministic rules plus retrieval;
+2. a language model with retrieved evidence;
+3. the hybrid graph, sparse state update and selective reasoning design.
+
+Measure decision precision/recall, evidence fidelity, repeated-correction rate, rollback correctness, p50/p95 latency, peak resident memory, model bytes and cost per resolved case using a fixed, labelled dataset.
+
+## Scope and safety
+
+- No Yext API, production data source or remote knowledge graph is connected.
+- No external write-back, model API request or model download occurs.
+- Approval controls and connectors in later versions must enforce authentication, tenant-scoped authorization, data minimization, idempotency and audited rollback.
+- Synthetic data and candidate labels are illustrative, not customer information or measured business results.
+- This is an independent research concept, not an official Yext product or endorsement.
+
+## Planned evolution
+
+- **V1 — Executive experience:** this branch. Interactive mesh, local state updates, sparse reversible journal, model options and architecture.
+- **V2 — Engine verification:** isolate engine modules, add unit/property tests, fixtures, deterministic replay validation and measured complexity/RAM.
+- **V3 — Model and sparse-memory integration:** plug in one model adapter, add evidence-grounded structured outputs and evaluate true sparse-memory behaviour.
+- **V4 — Release hardening:** durable multi-user storage, authorization, connector safety, CI checks, failure recovery, privacy review and a measured CEO walkthrough.
