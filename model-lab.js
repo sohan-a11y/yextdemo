@@ -58,6 +58,7 @@ async function loadModel(forceDevice){
  }
  const device=(choice==="wasm"?"wasm":(choice==="webgpu"?"webgpu":(navigator.gpu?"webgpu":"wasm")));
  const dtype=device==="webgpu"?"q4f16":"q4";
+ if(basePageMemoryBytes===null)basePageMemoryBytes=await samplePageMemory();
  const started=performance.now();
  setStatus("#loadStatus","Importing Transformers.js and preparing "+device+" runtime. The first load downloads model files; keep this tab open.","");
  try{
@@ -94,7 +95,8 @@ async function inferPrompt(prompt){
  const started=performance.now();
  const result=await generator([{role:"system",content:SYSTEM_PROMPT},{role:"user",content:prompt}],{max_new_tokens:112,do_sample:false,repetition_penalty:1.04});
  const latency=performance.now()-started,text=getText(result);
- return {text,latencyMs:Number(latency.toFixed(1)),charsPerSecond:Number((text.length/(latency/1000||1)).toFixed(1))};
+ const pageMemoryBytes=await samplePageMemory();if(pageMemoryBytes!==null)updatePageMemoryFact(pageMemoryBytes);
+ return {text,latencyMs:Number(latency.toFixed(1)),charsPerSecond:Number((text.length/(latency/1000||1)).toFixed(1)),pageMemoryBytes};
 }
 function normalTime(v){
  if(v===null||v===undefined)return null;
@@ -176,5 +178,6 @@ $("#retryCpuBtn").addEventListener("click",()=>{ $("#runtimeChoice").value="wasm
 $("#inferBtn").addEventListener("click",runCustom);
 $("#suiteBtn").addEventListener("click",runSuite);
 $("#exportBtn").addEventListener("click",exportResults);
-window.LKMModelLab={MODEL_ID,CASES,normalTime,parseJSON,getText};\ninitDeviceFacts();renderRows();
+window.LKMModelLab={MODEL_ID,CASES,normalTime,parseJSON,getText};
+initDeviceFacts();renderRows();
 })();
