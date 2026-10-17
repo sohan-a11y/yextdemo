@@ -69,7 +69,6 @@ async function runCycle(query){
  await appendEvent("nca_cycle",changes.length?"Local state cycle updated "+changes.length+" of "+nodes.length+" knowledge objects":"Local state cycle ran; no state exceeded the sparse-write threshold",changes,{query:query||"local propagation",metrics:proposal.metrics});
  selectNode(selectedId);renderMeshes();showToast("Evaluated "+proposal.metrics.nodesEvaluated+" nodes; journaled "+changes.length+" sparse writes. No LLM or network request was made.");
 }
-}
 async function reverseEvent(id){
  const e=ledger.find(x=>x.id===id);if(!e||!e.changes||!e.changes.length){showToast("This event has no reversible state changes.");return}
  const applied=window.LKMEngine.applyRecordedChanges(byId,e.changes,"after","before",true);
