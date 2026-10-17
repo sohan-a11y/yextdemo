@@ -31,7 +31,7 @@ To deploy on Vercel, use the repository root as the output directory and leave t
 
 ## Interactive visual explainer
 
-The executive overview starts with a four-step animated visual narrative: (1) a conflicting business signal arrives, (2) its local graph neighbourhood is highlighted, (3) materially changed states enter the sparse journal, and (4) human approval and reversible recovery remain explicit. The walkthrough can be played, paused, stepped manually or entered by selecting stages in the diagram. The “Run local update” action performs the actual local state transition; the animation does not imply that an LLM or remote service was called.
+The landing page is intentionally minimal and led by a four-step animated visual explainer: (1) signal, (2) local graph, (3) sparse memory, and (4) human control. Long dashboard copy and KPI cards are hidden from the first view. The walkthrough can be played or navigated step-by-step; secondary graph and journal screens remain reachable from the guided actions. The “Run local update” action performs the actual local transition; the animation does not imply that an LLM or remote service was called.
 
 ## The NCA relationship, precisely stated
 
