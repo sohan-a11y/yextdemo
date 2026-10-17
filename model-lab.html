@@ -28,9 +28,11 @@ textarea{display:block;width:100%;min-height:135px;resize:vertical;background:#0
   <section class="panel">
    <h2>01 / Load the local model</h2>
    <p class="desc">SmolLM2 360M Instruct · ONNX · Apache-2.0 model family. Weights are fetched from Hugging Face and then inference runs in this browser tab, not on an LLM server.</p>
-   <div class="controls"><label class="eyebrow" for="runtimeChoice">Runtime</label><select id="runtimeChoice" class="select"><option value="auto">Auto · WebGPU if available</option><option value="webgpu">WebGPU · q4f16</option><option value="wasm">CPU/WASM · q4</option></select><button id="loadBtn" class="btn primary">Load model</button><button id="retryCpuBtn" class="btn hide">Retry on CPU/WASM</button></div>
+   <div class="controls"><label class="eyebrow" for="runtimeChoice">Runtime</label><select id="runtimeChoice" class="select"><option value="auto">Auto · WebGPU if available</option><option value="webgpu">WebGPU · q4f16</option><option value="wasm">CPU/WASM · q4</option></select><button id="loadBtn" class="btn primary">Load model</button><button id="retryCpuBtn" class="btn hide">Retry on CPU/WASM</button><button id="diagnosticBtn" class="btn">Check setup</button></div>
    <div id="loadStatus" class="status" role="status" aria-live="polite">Ready to load. Expect approximately 272 MB of q4f16 weights on WebGPU or 386 MB of q4 weights on CPU/WASM, plus tokenizer/runtime and inference overhead.</div>
    <div class="progress"><span id="loadProgress"></span></div>
+   <div id="diagnosticStatus" class="status" role="status" aria-live="polite">Setup checks have not run. Checks use small metadata requests and do not download model weights.</div>
+   <pre id="diagnosticDetails" class="output hide" aria-label="Browser setup diagnostics"></pre>
    <div class="hint">The loading timer includes download, cache access and model initialization. A failed WebGPU attempt can require a separate CPU quantization download if you switch runtimes.</div>
   </section>
   <section class="panel">
