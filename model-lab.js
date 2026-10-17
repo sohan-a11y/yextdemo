@@ -57,6 +57,47 @@ function progressCallback(p){
   $("#loadStatus").textContent="Preparing "+(p.file||p.name||"model asset")+"…";
  }
 }
+async function fetchWithTimeout(url,options,timeoutMs){
+ const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),timeoutMs||12000);
+ try{return await fetch(url,{...(options||{}),signal:controller.signal})}
+ finally{clearTimeout(timer)}
+}
+async function runDiagnostics(){
+ const button=$("#diagnosticBtn"),details=$("#diagnosticDetails");
+ if(button.disabled||busy)return;
+ button.disabled=true;details.classList.remove("hide");details.textContent="Checking browser and endpoint readiness…";
+ const checks=[];
+ const add=(name,ok,detail,optional)=>checks.push({name,ok:!!ok,detail,optional:!!optional});
+ add("Secure context",!!window.isSecureContext,window.isSecureContext?"HTTPS/secure browser context available":"Open the site over HTTPS to allow module loading and WebGPU");
+ add("WebGPU",true,navigator.gpu?"Available; WebGPU is an option":"Unavailable; choose CPU/WASM instead",!navigator.gpu);
+ add("Browser cache",typeof caches!=="undefined"&&typeof caches.open==="function",typeof caches!=="undefined"?"Cache API is available":"Cache API is unavailable; downloads may not persist",typeof caches==="undefined");
+ add("Memory estimate API",!!(window.crossOriginIsolated&&window.performance&&typeof performance.measureUserAgentSpecificMemory==="function"),window.crossOriginIsolated?"Page-memory API "+(performance.measureUserAgentSpecificMemory?"available":"not exposed by this browser"):"Page is not cross-origin isolated; memory estimate will be unavailable",true);
+ const formatTests=[
+  ["12-hour time",normalTime("6 PM")==="6 PM"],
+  ["Minutes preserved",normalTime("6:30 PM")==="6:30 PM"],
+  ["24-hour conversion",normalTime("18:30")==="6:30 PM"],
+  ["Extra response keys rejected",!parseJSON(JSON.stringify({decision:"review",conflict:true,proposed_closing_time:null,reason:"test",extra:true})).valid],
+  ["Invalid time rejected",!parseJSON(JSON.stringify({decision:"consistent",conflict:false,proposed_closing_time:"24:00",reason:"test"})).valid],
+  ["Strict response accepted",parseJSON(JSON.stringify({decision:"consistent",conflict:false,proposed_closing_time:"18:00",reason:"test"})).valid]
+ ];
+ formatTests.forEach(([name,ok])=>add("Format test · "+name,ok,ok?"Passed":"Failed",false));
+ try{
+  const res=await fetchWithTimeout(TRANSFORMERS_URL,{method:"HEAD",mode:"cors",cache:"no-store"},12000);
+  add("Transformers.js CDN",res.ok,"HTTP "+res.status+" · "+TRANSFORMERS_URL,!res.ok);
+ }catch(e){add("Transformers.js CDN",false,(e&&e.name==="AbortError"?"Timed out":"Fetch failed")+". Check network, content blockers or CDN availability.",false)}
+ try{
+  const configUrl="https://huggingface.co/"+MODEL_ID+"/resolve/"+MODEL_REVISION+"/config.json";
+  const res=await fetchWithTimeout(configUrl,{method:"GET",mode:"cors",cache:"no-store"},12000);
+  if(!res.ok)throw new Error("HTTP "+res.status);
+  const config=await res.json();
+  add("Pinned model snapshot",!!config, "HTTP "+res.status+" · "+(config.model_type||config.architectures?.[0]||"config found")+" · revision "+MODEL_REVISION.slice(0,7),false);
+ }catch(e){add("Pinned model snapshot",false,(e&&e.name==="AbortError"?"Timed out":e&&e.message?e.message:"Fetch failed")+". Check Hugging Face access and the pinned revision.",false)}
+ const required=checks.filter(x=>!x.optional),passed=required.filter(x=>x.ok).length;
+ details.textContent=checks.map(x=>(x.ok?"PASS":x.optional?"INFO":"FAIL")+" · "+x.name+" — "+x.detail).join("\n");
+ const failures=required.filter(x=>!x.ok);
+ setStatus("#diagnosticStatus",failures.length?passed+"/"+required.length+" required checks passed. Fix failed checks before loading the model.":"All required setup checks passed. WebGPU and page-memory support are optional; loading the weights is still a separate step.",failures.length?"warn":"good");
+ button.disabled=false;
+}
 async function loadModel(forceDevice){
  if(busy)return;
  setBusy(true);$("#retryCpuBtn").classList.add("hide");$("#loadProgress").style.width="0%";
@@ -204,6 +245,7 @@ function exportResults(){
  const payload={format:"lkm-local-model-evaluation-v1",exportedAt:new Date().toISOString(),modelId:MODEL_ID,modelRevision:MODEL_REVISION,transformersJs:"4.3.1",runtime:loadedDevice,dtype:loadedDtype,modelLoadMs:loadMs,measurementNotes:{peakProcessRam:"not exposed reliably to this browser page",pageMemory:"optional performance.measureUserAgentSpecificMemory samples of whole-page use; may omit GPU allocations and must not be treated as peak model RSS",deviceMemory:"coarse browser-reported device RAM only",originStorage:"approximate origin storage usage, not exact model cache size",quality:"small synthetic labelled suite; not a production accuracy evaluation"},memory:{crossOriginIsolated:!!window.crossOriginIsolated,baselineBytes:basePageMemoryBytes,afterLoadBytes:afterLoadPageMemoryBytes,highestSampledPageBytes:highestPageMemoryBytes,samples:memorySamples},suite:suiteResults,customInference:customResult?customResult:null};
  const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="lkm-local-model-evaluation.json";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
+$("#diagnosticBtn").addEventListener("click",runDiagnostics);
 $("#loadBtn").addEventListener("click",()=>loadModel());
 $("#retryCpuBtn").addEventListener("click",()=>{ $("#runtimeChoice").value="wasm";loadModel("wasm") });
 $("#inferBtn").addEventListener("click",runCustom);
