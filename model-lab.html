@@ -83,5 +83,12 @@ Classify whether these comparable sources conflict. Do not choose which source i
  <div class="privacy"><div style="font-size:16px;color:var(--mint)">◎</div><div><strong>Local inference, external asset download</strong><p>Test prompts are processed in this browser tab; no LLM inference API is called by this page. The JavaScript runtime comes from jsDelivr and model/tokenizer assets come from Hugging Face on first load. Model caching is enabled, but browsers can evict cached files. Do not use confidential or regulated data until the network, cache and privacy setup has been reviewed.</p></div></div>
  <div class="foot">Model: <a href="https://huggingface.co/onnx-community/SmolLM2-360M-Instruct-ONNX" target="_blank" rel="noreferrer">onnx-community/SmolLM2-360M-Instruct-ONNX ↗</a> · Runtime: <a href="https://huggingface.co/docs/transformers.js" target="_blank" rel="noreferrer">Transformers.js ↗</a> · Pinned snapshot <code>fe7c7db4c8921c9e3fa1c65cfd296fb3b1b1a8f9</code> · <span id="runtimeFact">Runtime has not loaded.</span><br>Limit: JavaScript cannot reliably report peak RSS/model RAM. A credible sub-1 GB claim still requires native/process-level profiling on the actual target device.</div>
 </main>
+<script type="importmap">
+{
+  "imports": {
+    "@huggingface/transformers": "https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.3.1"
+  }
+}
+</script>
 <script src="model-lab.js"></script>
 </body></html>
