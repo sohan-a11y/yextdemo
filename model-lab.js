@@ -2,6 +2,7 @@
 (function(){
 const $=s=>document.querySelector(s);
 const MODEL_ID="onnx-community/SmolLM2-360M-Instruct-ONNX";
+const MODEL_REVISION="fe7c7db4c8921c9e3fa1c65cfd296fb3b1b1a8f9";
 const TRANSFORMERS_URL="https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.3.1";
 const SYSTEM_PROMPT='You are a cautious evidence-triage component. Return ONLY one JSON object with exactly these keys: decision, conflict, proposed_closing_time, reason. decision must be one of "review", "consistent", "insufficient". conflict must be a JSON boolean. proposed_closing_time must be a normalized time such as "6 PM" or JSON null. If comparable source records for the same business and effective date disagree, use decision="review", conflict=true, and proposed_closing_time=null. If comparable records agree, use decision="consistent", conflict=false, and proposed_closing_time set to the shared time. If only one comparable record exists or dates cannot be compared, use decision="insufficient", conflict=false, proposed_closing_time=null. Never decide which source is authoritative. Keep reason brief. Never add markdown fences.';
 const CASES=[
@@ -67,13 +68,13 @@ async function loadModel(forceDevice){
   const lib=await import(TRANSFORMERS_URL);
   transformersEnv=lib.env;
   if(transformersEnv){transformersEnv.useBrowserCache=true;transformersEnv.allowLocalModels=false;}
-  generator=await lib.pipeline("text-generation",MODEL_ID,{device,dtype,progress_callback:progressCallback});
+  generator=await lib.pipeline("text-generation",MODEL_ID,{device,dtype,revision:MODEL_REVISION,progress_callback:progressCallback});
   loadedDevice=device;loadedDtype=dtype;loadMs=performance.now()-started;afterLoadPageMemoryBytes=await samplePageMemory();updatePageMemoryFact(afterLoadPageMemoryBytes);
   $("#readyTag").textContent="MODEL READY";
   $("#readyTag").style.color="var(--mint)";
   $("#readyTag").style.borderColor="#31564e";
   $("#loadProgress").style.width="100%";
-  setStatus("#loadStatus","Loaded "+MODEL_ID+" · "+device.toUpperCase()+" · "+dtype+" · initialization "+(loadMs/1000).toFixed(1)+" s. Timer includes download/cache and runtime setup.","good");
+  setStatus("#loadStatus","Loaded "+MODEL_ID+" · revision "+MODEL_REVISION.slice(0,7)+" · "+device.toUpperCase()+" · "+dtype+" · initialization "+(loadMs/1000).toFixed(1)+" s. Timer includes download/cache and runtime setup.","good");
   $("#runtimeFact").textContent="Loaded in this tab using "+device+" and "+dtype+".";
   $("#customOutput").textContent="Ready. Run a sample prompt to see the model's raw generated response.";
   $("#inferBtn").disabled=false;$("#suiteBtn").disabled=false;$("#exportBtn").disabled=!(suiteResults.length||customResult);
@@ -174,7 +175,7 @@ async function runSuite(){
  }finally{setBusy(false);$("#exportBtn").disabled=!(suiteResults.length||customResult)}
 }
 function exportResults(){
- const payload={format:"lkm-local-model-evaluation-v1",exportedAt:new Date().toISOString(),modelId:MODEL_ID,transformersJs:"4.3.1",runtime:loadedDevice,dtype:loadedDtype,modelLoadMs:loadMs,measurementNotes:{peakProcessRam:"not exposed reliably to this browser page",pageMemory:"optional performance.measureUserAgentSpecificMemory samples of whole-page use; may omit GPU allocations and must not be treated as peak model RSS",deviceMemory:"coarse browser-reported device RAM only",originStorage:"approximate origin storage usage, not exact model cache size",quality:"small synthetic labelled suite; not a production accuracy evaluation"},memory:{crossOriginIsolated:!!window.crossOriginIsolated,baselineBytes:basePageMemoryBytes,afterLoadBytes:afterLoadPageMemoryBytes,highestSampledPageBytes:highestPageMemoryBytes,samples:memorySamples},suite:suiteResults,customInference:customResult?{prompt:$("#customPrompt").value.trim(),...customResult}:null};
+ const payload={format:"lkm-local-model-evaluation-v1",exportedAt:new Date().toISOString(),modelId:MODEL_ID,modelRevision:MODEL_REVISION,transformersJs:"4.3.1",runtime:loadedDevice,dtype:loadedDtype,modelLoadMs:loadMs,measurementNotes:{peakProcessRam:"not exposed reliably to this browser page",pageMemory:"optional performance.measureUserAgentSpecificMemory samples of whole-page use; may omit GPU allocations and must not be treated as peak model RSS",deviceMemory:"coarse browser-reported device RAM only",originStorage:"approximate origin storage usage, not exact model cache size",quality:"small synthetic labelled suite; not a production accuracy evaluation"},memory:{crossOriginIsolated:!!window.crossOriginIsolated,baselineBytes:basePageMemoryBytes,afterLoadBytes:afterLoadPageMemoryBytes,highestSampledPageBytes:highestPageMemoryBytes,samples:memorySamples},suite:suiteResults,customInference:customResult?{prompt:$("#customPrompt").value.trim(),...customResult}:null};
  const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="lkm-local-model-evaluation.json";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 $("#loadBtn").addEventListener("click",()=>loadModel());
@@ -182,6 +183,6 @@ $("#retryCpuBtn").addEventListener("click",()=>{ $("#runtimeChoice").value="wasm
 $("#inferBtn").addEventListener("click",runCustom);
 $("#suiteBtn").addEventListener("click",runSuite);
 $("#exportBtn").addEventListener("click",exportResults);
-window.LKMModelLab={MODEL_ID,CASES,normalTime,parseJSON,getText};
+window.LKMModelLab={MODEL_ID,MODEL_REVISION,CASES,normalTime,parseJSON,getText};
 initDeviceFacts();renderRows();
 })();
