@@ -4,7 +4,8 @@ const $=s=>document.querySelector(s);
 const MODEL_ID="onnx-community/SmolLM2-360M-Instruct-ONNX";
 const MODEL_REVISION="fe7c7db4c8921c9e3fa1c65cfd296fb3b1b1a8f9";
 const TRANSFORMERS_URL="https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.3.1";
-const SYSTEM_PROMPT='You are a cautious evidence-triage component. Return ONLY one JSON object with exactly these keys: decision, conflict, proposed_closing_time, reason. decision must be one of "review", "consistent", "insufficient". conflict must be a JSON boolean. proposed_closing_time must be a normalized time such as "6 PM" or JSON null. If comparable source records for the same business and effective date disagree, use decision="review", conflict=true, and proposed_closing_time=null. If comparable records agree, use decision="consistent", conflict=false, and proposed_closing_time set to the shared time. If only one comparable record exists or dates cannot be compared, use decision="insufficient", conflict=false, proposed_closing_time=null. Never decide which source is authoritative. Keep reason brief. Never add markdown fences.';
+const STRUCTURED_OUTPUT_URL="https://cdn.jsdelivr.net/npm/@huggingface/transformers-structured-output@4.3.1";
+const SYSTEM_PROMPT='You compare source records. Apply these rules exactly: if two comparable records for the same business and effective date disagree, decision=review and conflict=true; if they agree, decision=consistent and conflict=false; if there is only one comparable record or dates cannot be compared, decision=insufficient and conflict=false. Never choose an authoritative source or invent a time. Use a shared time only when the records agree. Keep reason to one short sentence. Output only the JSON object matching the supplied schema.';
 const CASES=[
  {id:"same-date-conflict",label:"Same date · sources disagree",prompt:"Business: Brooklyn North. Effective date: 2026-10-31. Published profile for this exact business and date: closes 8 PM. Manager override for this exact business and date: closes 6 PM. Do the comparable sources disagree?",expected:{decision:"review",conflict:true,proposed_closing_time:null}},
  {id:"same-value",label:"Same date · same time",prompt:"Business: River Market. Effective date: 2026-11-02. Published profile for this exact business and date: closes 6 PM. Manager override for this exact business and date: closes 6 PM. Do the comparable sources disagree?",expected:{decision:"consistent",conflict:false,proposed_closing_time:"6 PM"}},
@@ -12,7 +13,7 @@ const CASES=[
  {id:"single-source",label:"Only one source",prompt:"Business: West Gate. Target effective date: 2026-11-04. Only one source is available: an undated note says closes 7 PM. There is no second source to compare. Is there a confirmed conflict?",expected:{decision:"insufficient",conflict:false,proposed_closing_time:null}},
  {id:"equivalent-time",label:"Equivalent time formats",prompt:"Business: Cedar Square. Effective date: 2026-11-07. Published profile says closes at 18:00. Manager override for the same business and date says closes at 6 PM. These are two written formats for the same time. Do the sources disagree?",expected:{decision:"consistent",conflict:false,proposed_closing_time:"6 PM"}}
 ];
-let generator=null,loadedDevice=null,loadedDtype=null,loadMs=null,busy=false,suiteResults=[],customResult=null,transformersEnv=null,basePageMemoryBytes=null,afterLoadPageMemoryBytes=null,highestPageMemoryBytes=null,memorySamples=[];
+let generator=null,structuredOutputModule=null,processorCache=new Map(),loadedDevice=null,loadedDtype=null,loadMs=null,busy=false,suiteResults=[],customResult=null,transformersEnv=null,basePageMemoryBytes=null,afterLoadPageMemoryBytes=null,highestPageMemoryBytes=null,memorySamples=[];
 function setStatus(selector,text,kind){const e=$(selector);e.textContent=text;e.className="status"+(kind?" "+kind:"")}
 function setBusy(v){busy=v;$("#loadBtn").disabled=v||!!generator;$("#inferBtn").disabled=v||!generator;$("#suiteBtn").disabled=v||!generator;$("#runtimeChoice").disabled=v||!!generator;$("#exportBtn").disabled=v||!(suiteResults.length||customResult)}
 function updateStorage(){
@@ -87,6 +88,10 @@ async function runDiagnostics(){
   add("Transformers.js CDN",res.ok,"HTTP "+res.status+" · "+TRANSFORMERS_URL,!res.ok);
  }catch(e){add("Transformers.js CDN",false,(e&&e.name==="AbortError"?"Timed out":"Fetch failed")+". Check network, content blockers or CDN availability.",false)}
  try{
+  const structuredRes=await fetchWithTimeout(STRUCTURED_OUTPUT_URL,{method:"HEAD",mode:"cors",cache:"no-store"},12000);
+  add("Structured-output CDN",structuredRes.ok,"HTTP "+structuredRes.status+" · "+STRUCTURED_OUTPUT_URL,false);
+ }catch(e){add("Structured-output CDN",false,(e&&e.name==="AbortError"?"Timed out":"Fetch failed")+". This dependency is required for schema-constrained generation.",false)}
+ try{
   const configUrl="https://huggingface.co/"+MODEL_ID+"/resolve/"+MODEL_REVISION+"/config.json";
   const res=await fetchWithTimeout(configUrl,{method:"GET",mode:"cors",cache:"no-store"},12000);
   if(!res.ok)throw new Error("HTTP "+res.status);
@@ -116,6 +121,9 @@ async function loadModel(forceDevice){
   transformersEnv=lib.env;
   if(transformersEnv){transformersEnv.useBrowserCache=true;transformersEnv.useWasmCache=true;transformersEnv.allowLocalModels=false;}
   generator=await lib.pipeline("text-generation",MODEL_ID,{device,dtype,revision:MODEL_REVISION,progress_callback:progressCallback});
+  const structuredLib=await import(STRUCTURED_OUTPUT_URL);
+  if(typeof structuredLib.StructuredOutputProcessor!=="function")throw new Error("StructuredOutputProcessor export is missing.");
+  structuredOutputModule=structuredLib;processorCache.clear();
   loadedDevice=device;loadedDtype=dtype;loadMs=performance.now()-started;afterLoadPageMemoryBytes=await samplePageMemory();updatePageMemoryFact(afterLoadPageMemoryBytes);
   $("#runtimeChoice").value=device;$("#loadBtn").textContent="Model loaded ✓";
   $("#readyTag").textContent="MODEL READY";
@@ -128,7 +136,7 @@ async function loadModel(forceDevice){
   $("#inferBtn").disabled=false;$("#suiteBtn").disabled=false;$("#exportBtn").disabled=!(suiteResults.length||customResult);
   updateStorage();
  }catch(err){
-  generator=null;loadedDevice=null;loadedDtype=null;loadMs=null;$("#loadBtn").textContent="Retry model load";
+  generator=null;structuredOutputModule=null;processorCache.clear();loadedDevice=null;loadedDtype=null;loadMs=null;$("#loadBtn").textContent="Retry model load";
   $("#readyTag").textContent="LOAD FAILED";$("#readyTag").style.color="var(--red)";$("#readyTag").style.borderColor="#633840";
   setStatus("#loadStatus","Could not initialize "+device+"/"+dtype+": "+(err&&err.message?err.message:String(err))+". Retry or choose CPU/WASM; that may download a different quantized file.","bad");
   if(device==="webgpu")$("#retryCpuBtn").classList.remove("hide");
@@ -141,10 +149,37 @@ function getText(out){
  if(x&&typeof x.content==="string")return x.content.trim();
  return String(x??"");
 }
+function timesMentioned(prompt){
+ const matches=String(prompt||"").match(/(?:\b\d{1,2}(?::\d{2})?\s*(?:a\.?m\.?|p\.?m\.?)|\b\d{1,2}:\d{2})/gi)||[];
+ return [...new Set(matches.map(value=>parseTime(value)).filter(result=>result.ok&&result.value!==null).map(result=>result.value))];
+}
+function getStructuredOutputProcessor(prompt){
+ if(!structuredOutputModule||!generator)throw new Error("Structured-output processor is not ready. Reload the model so its schema processor can initialize.");
+ const times=timesMentioned(prompt),key=JSON.stringify(times);
+ if(processorCache.has(key))return processorCache.get(key);
+ const processor=new structuredOutputModule.StructuredOutputProcessor(generator.tokenizer,{
+  type:"json_schema",
+  json_schema:{
+   type:"object",
+   properties:{
+    decision:{type:"string",enum:["review","consistent","insufficient"]},
+    conflict:{type:"boolean"},
+    proposed_closing_time:{enum:[...times,null]},
+    reason:{type:"string"}
+   },
+   required:["decision","conflict","proposed_closing_time","reason"],
+   additionalProperties:false
+  }
+ });
+ if(processorCache.size>=8)processorCache.delete(processorCache.keys().next().value);
+ processorCache.set(key,processor);
+ return processor;
+}
 async function inferPrompt(prompt){
  if(!generator)throw new Error("Load the model first.");
  const started=performance.now();
- const result=await generator([{role:"system",content:SYSTEM_PROMPT},{role:"user",content:prompt}],{max_new_tokens:112,do_sample:false,repetition_penalty:1.04});
+ const processor=getStructuredOutputProcessor(prompt);
+ const result=await generator([{role:"system",content:SYSTEM_PROMPT},{role:"user",content:prompt}],{max_new_tokens:160,do_sample:false,repetition_penalty:1.02,logits_processor:[processor]});
  const latency=performance.now()-started,text=getText(result);
  const pageMemoryBytes=await samplePageMemory();if(pageMemoryBytes!==null)updatePageMemoryFact(pageMemoryBytes);
  return {text,latencyMs:Number(latency.toFixed(1)),charsPerSecond:Number((text.length/(latency/1000||1)).toFixed(1)),pageMemoryBytes};
