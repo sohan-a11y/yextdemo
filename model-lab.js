@@ -14,7 +14,7 @@ const CASES=[
 ];
 let generator=null,loadedDevice=null,loadedDtype=null,loadMs=null,busy=false,suiteResults=[],customResult=null,transformersEnv=null,basePageMemoryBytes=null,afterLoadPageMemoryBytes=null,highestPageMemoryBytes=null,memorySamples=[];
 function setStatus(selector,text,kind){const e=$(selector);e.textContent=text;e.className="status"+(kind?" "+kind:"")}
-function setBusy(v){busy=v;$("#loadBtn").disabled=v||!!generator;$("#inferBtn").disabled=v||!generator;$("#suiteBtn").disabled=v||!generator;$("#runtimeChoice").disabled=v||!!generator}
+function setBusy(v){busy=v;$("#loadBtn").disabled=v||!!generator;$("#inferBtn").disabled=v||!generator;$("#suiteBtn").disabled=v||!generator;$("#runtimeChoice").disabled=v||!!generator;$("#exportBtn").disabled=v||!(suiteResults.length||customResult)}
 function updateStorage(){
  if(!navigator.storage||!navigator.storage.estimate){$("#storageFact").textContent="Not available";return}
  navigator.storage.estimate().then(x=>{const mb=x.usage?x.usage/1048576:0;$("#storageFact").textContent=typeof x.usage==="number"?mb.toFixed(0)+" MB":"Not available"}).catch(()=>{$("#storageFact").textContent="Not available"});
@@ -51,6 +51,7 @@ function progressCallback(p){
   if(percentage!==null)$("#loadProgress").style.width=percentage+"%";
   $("#loadStatus").textContent="Loading model assets"+(percentage===null?"…":" · "+percentage.toFixed(0)+"%")+" (overall)";
  }else if(p.status==="progress"&&total>0){
+  if(percentage!==null)$("#loadProgress").style.width=percentage+"%";
   $("#loadStatus").textContent="Downloading/caching "+(p.file||p.name||"model asset")+" · "+(percentage===null?"…":percentage.toFixed(0)+"%");
  }else if(p.status==="initiate"){
   $("#loadStatus").textContent="Preparing "+(p.file||p.name||"model asset")+"…";
