@@ -51,10 +51,11 @@ Total saving = analyst time saved + AI compute avoided versus a brute-force "re-
 
 ## Living Knowledge Mesh organism study (`lkm/`)
 
-A research harness for the artificial-life idea: workers with neural-cellular-automaton brains living on a knowledge graph, evaluated against strong
-conventional baselines on synthetic worlds and on real Overture Maps data. `python -m lkm.run_all` reproduces everything; the report is
-`lkm_out/report.html`. Short version: the NCA cell field helps where events cluster or the world shifts; on real data it ties the best baseline on the
-verification game and slightly improves forecasting; the 'living' extras (scent, plasticity, evolution) showed no measurable benefit. Details in `lkm/README.md`.
+An artificial-life study: workers with neural-cellular-automaton brains live on a knowledge graph and learn which facts need attention. The final build gives the
+organism language (a small pretrained text encoder, a learned vocabulary between cells, plain-sentence explanations). `python -m lkm.run_all --final --comm both --out lkm_out_final`
+reproduces everything; the report is `lkm_out_final/report.html`. Short version: reading names and strings lifted every method by about 5 points on real Overture Maps data;
+the cell field wins in synthetic worlds with clustered, lexical or shifting structure; against a baseline that reads as well, the organism does not beat it on real data
+and the workers add nothing over the cells. Details in `lkm/README.md`.
 
 ## What the prototype demonstrates
 

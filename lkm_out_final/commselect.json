@@ -1,0 +1,88 @@
+{
+ "modes": {
+  "cont": {
+   "control": {
+    "hit": 0.4377777777777778,
+    "spec": "cells[off,eps=0]"
+   },
+   "contagion": {
+    "hit": 0.4622222222222223,
+    "spec": "cells[l2=200,eps=0]"
+   },
+   "shifted": {
+    "hit": 0.33777777777777773,
+    "spec": "cells[l2=200,eps=0]"
+   },
+   "cascade": {
+    "hit": 0.5522222222222224,
+    "spec": "cells[off,eps=0]"
+   },
+   "lexical (names readable)": {
+    "hit": 0.5922222222222223,
+    "spec": "cells[off,eps=0]"
+   }
+  },
+  "lex": {
+   "control": {
+    "hit": 0.45444444444444443,
+    "spec": "cells[l2=200,eps=0]"
+   },
+   "contagion": {
+    "hit": 0.4533333333333333,
+    "spec": "cells[off,eps=0]"
+   },
+   "shifted": {
+    "hit": 0.22555555555555554,
+    "spec": "cells[off,eps=0]"
+   },
+   "cascade": {
+    "hit": 0.5166666666666666,
+    "spec": "cells[off,eps=0]"
+   },
+   "lexical (names readable)": {
+    "hit": 0.5855555555555556,
+    "spec": "cells[off,eps=0]"
+   }
+  },
+  "both": {
+   "control": {
+    "hit": 0.4433333333333333,
+    "spec": "cells[off,eps=0]"
+   },
+   "contagion": {
+    "hit": 0.4588888888888889,
+    "spec": "cells[l2=200,eps=0]"
+   },
+   "shifted": {
+    "hit": 0.3444444444444445,
+    "spec": "cells[l2=200,eps=0]"
+   },
+   "cascade": {
+    "hit": 0.5455555555555557,
+    "spec": "cells[off,eps=0]"
+   },
+   "lexical (names readable)": {
+    "hit": 0.5855555555555556,
+    "spec": "cells[l2=200,eps=0]"
+   }
+  }
+ },
+ "real_val_auc": {
+  "cont": 0.8178504292301679,
+  "lex": 0.8159586320126234,
+  "both": 0.8158175589303978
+ },
+ "mean_val_hit": {
+  "cont": 0.4764444444444445,
+  "lex": 0.4471111111111111,
+  "both": 0.4755555555555556
+ },
+ "real_ok": {
+  "lex": true,
+  "both": true
+ },
+ "decision": {
+  "comm": "both",
+  "rule": "higher mean validation hit over synthetic families among {lex, both}; reject if real-data validation AUC is >0.003 below the best mode"
+ }
+}

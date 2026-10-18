@@ -5,3 +5,7 @@ lkm_out/cache/
 lkm_out_smoke/
 __pycache__/
 *.pyc
+
+lkm_out_final/cache/
+lkm_out_final_wordsonly/cache/
+lkm_out_final_smoke/

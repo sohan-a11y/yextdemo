@@ -1,0 +1,15 @@
+[real] loaded cached dataset: 399643 places
+[real] language layer: {'features': 48, 'edges': 0} -> 98 features
+[real] split: {'n_train': 236394, 'n_chunks': 23, 'n_val': 102986, 'n_test': 60263, 'n_val_chunks': 7, 'n_test_pools': 7, 'test_pool_sizes': [8144, 8816, 13629, 8338, 7871, 7757, 5708], 'base_rate_train': 0.12270616005482372, 'base_rate_test': 0.1132701657733601, 'base_rate_gone_test': 0.04555033768647429}
+[lang] R1: GBDT {'auc': 0.815460662143232, 'ap': 0.4944456682704676, 'p@3%': 0.7585196042506412} (22s)
+[lang] R1 cells[cont] auc 0.8179 p@3% 0.7666 dAUC +0.0024 (82s)
+[lang] R1 cells[lex] auc 0.8160 p@3% 0.7549 dAUC +0.0005 (98s)
+[lang] R1 cells[both] auc 0.8158 p@3% 0.7560 dAUC +0.0003 (119s)
+[real] loaded cached dataset: 399643 places
+[real] language layer: {'features': 48, 'edges': 181295} -> 98 features
+[real] split: {'n_train': 236394, 'n_chunks': 23, 'n_val': 102986, 'n_test': 60263, 'n_val_chunks': 7, 'n_test_pools': 7, 'test_pool_sizes': [8144, 8816, 13629, 8338, 7871, 7757, 5708], 'base_rate_train': 0.12270616005482372, 'base_rate_test': 0.1132701657733601, 'base_rate_gone_test': 0.04555033768647429}
+[lang] R2: GBDT {'auc': 0.8152573110538848, 'ap': 0.49320653337694575, 'p@3%': 0.7541223891535361} (22s)
+[lang] R2 cells[cont] auc 0.8157 p@3% 0.7556 dAUC +0.0004 (79s)
+[lang] R2 cells[lex] auc 0.8157 p@3% 0.7534 dAUC +0.0004 (97s)
+[lang] R2 cells[both] auc 0.8158 p@3% 0.7563 dAUC +0.0006 (119s)
+[lang] decision {'comm': 'lex', 'dataset': 'R1', 'val_auc_by_comm': {'cont': 0.8178504292301679, 'lex': 0.8159586320126234, 'both': 0.8158175589303978}, 'rule': 'words-only if within 0.002 AUC of the best mode; dataset = higher cell-field AUC of R1/R2'}

@@ -5,6 +5,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from .metrics import paired_diff_ci, bootstrap_ci
+from .organism import p_total
 
 C_ORG, C_BASE, C_CELL, C_GREY = "#1f9d8a", "#5a6b8c", "#d98a1f", "#9aa5b1"
 FAMILY_LABEL = {"syn_control": "Control world (no graph effects)", "syn_contagion": "Contagion world", "syn_cascade": "Cascade world (clustered events)",
@@ -227,6 +228,14 @@ def contrast_table(fams):
     return "".join(out)
 
 
+def _old_real():
+    p = os.path.join("lkm_out", "results.json")
+    try:
+        return json.load(open(p)).get("real")
+    except Exception:
+        return None
+
+
 def plain_summary(results):
     """Plain-language summary generated from the numbers (no hand-written claims)."""
     lines = []
@@ -245,6 +254,17 @@ def plain_summary(results):
         if d1:
             t += f"For one-shot forecasting the cell field changed AUC by {d1[0]:+.4f} [{d1[1]:+.4f}, {d1[2]:+.4f}] over boosted trees with graph features."
         lines.append(t + "</li>")
+    old = _old_real()
+    if old and isinstance(real, dict) and "e2" in real:
+        try:
+            e_old = old["e2"]; st_old = old["e2_verdict"]["strongest_baseline"]
+            org_new = next(n for n in real["e2"] if is_primary(n))
+            d = paired_diff_ci(real["e2"][org_new]["per_ds"], e_old[st_old]["per_ds"])
+            lines.append(f"<li><b>Language, system level.</b> Against the previous build's strongest baseline (no text inputs, {100*e_old[st_old]['mean']:.1f}% per verification), the final organism "
+                         f"finds {100*real['e2'][org_new]['mean']:.1f}%: {100*d[0]:+.1f} points [{100*d[1]:+.1f}, {100*d[2]:+.1f}] {verdict_chip('WIN' if d[1] > 0 else 'LOSS' if d[2] < 0 else 'TIE')}. "
+                         "Most of that comes from <i>reading</i>, which the boosted-tree baseline gets as well once it is given the same inputs; the like-for-like comparison is in the first table.</li>")
+        except Exception:
+            pass
     wins, ties = [], 0
     abl = {"scent": [0, 0, 0], "plasticity": [0, 0, 0], "evolution": [0, 0, 0]}
     for k in FAM_ORDER[:-1]:
@@ -357,6 +377,22 @@ def lang_study_section(out_dir):
             if f"cells_{k}" in L[name]:
                 row(lab, L[name][f"cells_{k}"])
     dec = L.get("decision", {})
+    groups = ""
+    gp = os.path.join(out_dir, "langgroups.json")
+    if os.path.exists(gp):
+        try:
+            G = json.load(open(gp))
+            grow = ""
+            for gname, g in G.get("groups", {}).items():
+                a_, r_ = g["added_alone"], g["removed_from_all"]
+                grow += (f"<tr><td>{esc(gname)}</td><td>{g['n_features']}</td><td>{a_['auc']:.4f} <small>{a_['auc_vs_original'][0]:+.4f} "
+                         f"[{a_['auc_vs_original'][1]:+.4f}, {a_['auc_vs_original'][2]:+.4f}]</small></td>"
+                         f"<td>{r_['auc_vs_all'][0]:+.4f} <small>[{r_['auc_vs_all'][1]:+.4f}, {r_['auc_vs_all'][2]:+.4f}]</small></td></tr>")
+            groups = ("<h4>Where does the gain from reading come from?</h4><p>Boosted trees only, validation data. Original 50 features: AUC "
+                      f"{G['original features only']['auc']:.4f}; with every text input: {G['all features']['auc']:.4f}.</p>"
+                      "<table><tr><th>input group</th><th>features</th><th>added alone to the original 50 (AUC change)</th><th>AUC change if removed from the full set</th></tr>" + grow + "</table>")
+        except Exception:
+            groups = ""
     gain = ""
     if "R2" in L:
         gain = (f"<p>Reading alone lifts the boosted trees from AUC {r0['gbdt_graph']['auc']:.4f} to {L['R1']['gbdt_graph']['auc']:.4f}"
@@ -364,10 +400,10 @@ def lang_study_section(out_dir):
     return ("<h2>Language study (validation data only)</h2><p>What does it buy to let the organism read? Scored on the six validation chunks that no model was fitted or selected on "
             "(test pools untouched). AUC pools all validation places; the last column is the cells' AUC gain over the trees <i>on the same inputs</i>, with a 95% bootstrap interval.</p>"
             "<table><tr><th>model</th><th>AUC</th><th>top&nbsp;3% precision</th><th>cells &minus; trees</th></tr>" + "".join(rows) + "</table>" + gain +
-            f"<p class='meta'>Pre-declared rule: {esc(dec.get('rule', ''))}. Chosen: communication <b>{esc(dec.get('comm'))}</b>, dataset <b>{esc(dec.get('dataset'))}</b>.</p>")
+            f"<p class='meta'>Pre-declared rule: {esc(dec.get('rule', ''))}. Dataset chosen here: <b>{esc(dec.get('dataset'))}</b> (R1 = text features without language edges). The communication mode is chosen in the next table, which adds the synthetic worlds.</p>" + groups)
 
 
-def speech_html(real):
+def speech_html(real, comm="lex"):
     sp = (real or {}).get("speech")
     if not sp or "error" in sp:
         return ""
@@ -380,7 +416,8 @@ def speech_html(real):
         rows.append(f"<tr><td>{e['word']}</td><td>{100*e['share']:.1f}%</td><td>{100*e['change_rate']:.0f}% <small>({e['lift']:.1f}&times;)</small></td><td>{tr}<small>{ex}</small></td></tr>")
     log = "".join(f"<li>{esc(x)}</li>" for x in sp.get("worker_log", [])[:10])
     ex = "".join(f"<li>{esc(x)}</li>" for x in sp.get("explanations", []))
-    return ("<h3>What the organism says</h3><p>The cells talk to each other in a learned vocabulary: each cell emits one word per step and its neighbours hear only words. "
+    return ("<h3>What the organism says</h3><p>The cells talk to each other in a learned vocabulary: each cell emits one word per step and its neighbours hear "
+            + ("only words" if comm == "lex" else "the words together with the continuous messages") + ". "
             "The table is the dictionary, measured on validation places (share of places saying the word, how often those places later changed, what they have in common). "
             "Words have no names; the descriptions are read off the statistics. The sentences below are templates filled with the organism's own numbers; this is not a language model.</p>"
             "<table><tr><th>word</th><th>share</th><th>changed later</th><th>what they have in common</th></tr>" + "".join(rows) + "</table>"
@@ -442,9 +479,74 @@ def lexical_section(results):
             "<table><tr><th>positives found per verification</th><th>names unreadable</th><th>names readable</th><th>gain from reading</th></tr>" + rows + "</table>")
 
 
+def language_bullets(cfg):
+    if not cfg.get("vocab"):
+        return ""
+    return ("<li><b>Reading.</b> A pretrained sentence encoder (all-MiniLM-L6-v2, ONNX, runs on CPU) reads every place's name and category; website, phone and address strings are parsed into classes; "
+            "names are compared with their neighbours to spot near-duplicates. All of it comes from the August table only. The boosted-tree baseline receives exactly the same inputs.</li>"
+            f"<li><b>Speaking.</b> Cells talk to each other in a learned vocabulary of {cfg['vocab']} words (communication mode: <code>{esc(cfg.get('comm'))}</code>); each cell emits one word per step and, in word-only mode, "
+            "its neighbours hear nothing else. Workers hear the word the cell field is saying at their node. A narrator turns the organism's state into plain sentences (templates filled with its own numbers).</li>")
+
+
+def language_limits(cfg):
+    if not cfg.get("vocab"):
+        return ""
+    return ("<li>Language here means a small pretrained sentence encoder plus a learned vocabulary and templated explanations. It is not a large language model; it cannot read web pages or reviews. "
+            "Words have no fixed meaning across worlds: each model learns its own vocabulary.</li>"
+            "<li>Some text signals (near-duplicate names next door) probably predict Overture's own merging of records rather than a change in the world. For a knowledge graph with duplicate listings that is also a real signal, but it is a property of this label.</li>"
+            "<li>The lexical synthetic world is built by me to contain the mechanism it tests.</li>")
+
+
+def commselect_section(out_dir, results):
+    p = os.path.join(out_dir, "commselect.json")
+    if not os.path.exists(p):
+        return ""
+    try:
+        C = json.load(open(p))
+    except Exception:
+        return ""
+    fams = list(next(iter(C["modes"].values())).keys())
+    head = "".join(f"<th>{esc(f)}</th>" for f in fams)
+    lab = {"cont": "continuous messages only (no words)", "lex": "words only", "both": "words + continuous messages"}
+    rows = ""
+    for m in ("cont", "lex", "both"):
+        if m in C["modes"]:
+            rows += f"<tr><td>{lab[m]}</td>" + "".join(f"<td>{100*C['modes'][m][f]['hit']:.1f}%</td>" for f in fams) + f"<td><b>{100*C['mean_val_hit'][m]:.1f}%</b></td></tr>"
+    # first final run (words only) on the test sets
+    wp = os.path.join("lkm_out_final_wordsonly", "results.json")
+    cmp_rows = ""
+    if os.path.exists(wp):
+        try:
+            W = json.load(open(wp))
+            for k in FAM_ORDER:
+                a, b = W.get(k), results.get(k)
+                if not (isinstance(a, dict) and isinstance(b, dict) and "e2" in a and "e2" in b):
+                    continue
+                def pick(f, pred):
+                    n = next((x for x in f["e2"] if pred(x)), None)
+                    return f["e2"][n]["mean"] if n else None
+                ca, cb = pick(a, lambda x: x.startswith("cells[")), pick(b, lambda x: x.startswith("cells["))
+                oa, ob = pick(a, is_primary), pick(b, is_primary)
+                st = lambda f: f["e2"][f["e2_verdict"]["strongest_baseline"]]["mean"]
+                cmp_rows += (f"<tr><td>{esc(FAMILY_LABEL[k].split(' (')[0].replace('REAL: ', 'REAL · '))}</td><td>{100*st(b):.1f}%</td>"
+                             f"<td>{100*ca:.1f}% &rarr; {100*cb:.1f}%</td><td>{100*oa:.1f}% &rarr; {100*ob:.1f}%</td></tr>")
+        except Exception:
+            cmp_rows = ""
+    cmp_html = ""
+    if cmp_rows:
+        cmp_html = ("<h4>What the first final run taught us</h4><p>The first run let cells talk in words only. On the real mesh that cost nothing measurable, but in worlds that change the cost was large: "
+                    "a discrete vocabulary adapts less well to a shifted world. That run is archived in <code>lkm_out_final_wordsonly/</code>. "
+                    "The final build keeps the words and adds the continuous channel back. This design change was made after seeing the first run's test results, using validation worlds only for the choice; "
+                    "both runs use the same fresh test worlds.</p>"
+                    "<table><tr><th>setting</th><th>strongest baseline</th><th>cell field alone: words only &rarr; final</th><th>full organism: words only &rarr; final</th></tr>" + cmp_rows + "</table>")
+    return ("<h4>How should the cells talk?</h4><p>Chosen on validation worlds (never the test worlds). Cell field alone, mean positives found per verification on validation worlds, best adaptation setting per cell:</p>"
+            f"<div style='overflow-x:auto'><table><tr><th>communication</th>{head}<th>mean</th></tr>{rows}</table></div>"
+            f"<p class='meta'>Pre-declared rule: {esc(C['decision']['rule'])}. Chosen: <b>{esc(C['decision']['comm'])}</b>.</p>" + cmp_html)
+
+
 def build_language_sections(results, out_dir):
     real = results.get("real", {})
-    return lang_study_section(out_dir) + lexical_section(results) + speech_html(real) + v2_compare_section(results)
+    return lang_study_section(out_dir) + commselect_section(out_dir, results) + lexical_section(results) + speech_html(real, (results.get('config') or {}).get('comm', 'lex')) + v2_compare_section(results)
 
 
 def timing_section(results):
@@ -576,7 +678,7 @@ pre{{padding:10px;overflow:auto;white-space:pre-wrap}} .chip{{font-weight:700;fo
 .chip.win{{color:var(--win)}} .chip.loss{{color:var(--loss)}} .chip.tie{{color:var(--tie)}} .verdict{{font-weight:600}} .err{{color:var(--loss)}}
 #vcv{{width:100%;background:#0b1118;border-radius:12px;display:block}} button{{font:inherit;padding:6px 14px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--fg)}}
 </style></head><body><main>
-<h1>Living Knowledge Mesh · Organism Study</h1>
+<h1>Living Knowledge Mesh · Organism Study{' · final build with language' if cfg.get('vocab') else ''}</h1>
 <p class="meta">A population of artificial workers with neural-cellular-automaton brains lives on a knowledge graph and learns which facts need attention. This report is generated by <code>python -m lkm.run_all</code>; every number below comes from that run. Python {esc(sysi.get('python'))}, {esc(sysi.get('cpus'))} CPUs, total {results.get('total_seconds', 0)/60:.0f} min. Unit tests: {esc(ts)}.</p>
 
 <h2>1. Headline</h2>
@@ -592,9 +694,9 @@ Wins: <b>{wins}</b> · ties: <b>{ties}</b> · losses: <b>{losses}</b> (of {len(t
 {v1_section(out_dir)}
 <h2>2. What was built</h2>
 <ul><li><b>Cells.</b> A neural cellular automaton on the graph: every node holds a 16-channel state; one shared tiny update rule is applied for 8 asynchronous steps, reading neighbours along space, brand and address edges. It is trained with gradients (JAX) as a residual on top of the baseline, so it starts exactly at the baseline.</li>
-<li><b>Workers.</b> A population of individuals with 16-cell recurrent brains (764 genome numbers). They walk the mesh or jump to random patches, decide where to request a verification, earn energy for confirmed positives and pay for misses. Starving workers are replaced by mutated copies of thriving ones (evolution at run time). Reward-modulated Hebbian fast weights give lifetime plasticity. Discoveries leave scent that diffuses and fades.</li>
+<li><b>Workers.</b> A population of individuals with 16-cell recurrent brains ({p_total(cfg.get('vocab', 0))} genome numbers). They walk the mesh or jump to random patches, decide where to request a verification, earn energy for confirmed positives and pay for misses. Starving workers are replaced by mutated copies of thriving ones (evolution at run time). Reward-modulated Hebbian fast weights give lifetime plasticity. Discoveries leave scent that diffuses and fades.</li>
 <li><b>Evolution.</b> The ancestral genome is evolved with evolution strategies on validation worlds that were never used to fit the baselines, the cells, or the test numbers.</li>
-<li><b>The game.</b> 3% of the entities can be verified over 8 rounds; a verification reveals the true label, and everything revealed can be used afterwards. This models the real constraint: only so many facts can be checked per day.</li></ul>
+{language_bullets(cfg)}<li><b>The game.</b> 3% of the entities can be verified over 8 rounds; a verification reveals the true label, and everything revealed can be used afterwards. This models the real constraint: only so many facts can be checked per day.</li></ul>
 
 <h2>3. Results</h2>
 <h3>Discovery per verification</h3><img src="{imgs['bars']}" alt="discovery bars"><img src="{imgs['curves']}" alt="discovery curves">
@@ -621,7 +723,7 @@ Wins: <b>{wins}</b> · ties: <b>{ties}</b> · losses: <b>{losses}</b> (of {len(t
 <li>Overture merges sources, so raw conflicting values are not visible; conflict detection is not tested on real data.</li>
 <li>Synthetic worlds embody my assumptions about hidden shocks. They are useful to show mechanisms and to falsify (see the control world), not as evidence about reality.</li>
 <li>Workers see descriptors (risk, scent, age), not text. 'Understanding' in the sense of reading content is out of scope.</li>
-<li>The baseline's and organism's adaptation settings were selected on validation worlds with identical grids; test sets were never used for selection.</li></ul>
+{language_limits(cfg)}<li>The baseline's and organism's adaptation settings were selected on validation worlds with identical grids; test sets were never used for selection.</li></ul>
 <details><summary>Raw unit-test output</summary><pre>{esc(tests.get('output', ''))}</pre></details>
 </main><script>window.LKM_VIEW={json.dumps(view) if view else 'null'};</script><script>{VIEWER_JS}</script></body></html>"""
     with open(os.path.join(out_dir, "report.html"), "w") as fh:
@@ -638,7 +740,7 @@ def genome_section(results):
             rows.append(f"<tr><td>{k}</td><td>{mb['cell_risk']}</td><td>{mb['scent_hit']}</td><td>{mb['verified_pos']}</td><td>{g['jump_bias']}</td><td>{g['plasticity_rate']}</td><td>{g['trace_decay']}</td></tr>")
     if not rows:
         return ""
-    return "<h3>What evolution learned (full genome)</h3><p class='meta'>Move preferences toward: cell risk, scent of confirmed positives, already verified positives (negative means avoided). Jump bias is a log-odds of leaving the neighbourhood.</p><table><tr><th>family</th><th>cell risk</th><th>scent</th><th>verified+</th><th>jump bias</th><th>plasticity</th><th>trace decay</th></tr>" + "".join(rows) + "</table>"
+    return "<h3>What evolution learned (full genome)</h3><p class='meta'>Move preferences toward: cell risk, scent of confirmed positives, already verified positives (negative means avoided). Jump bias is a log-odds of leaving the neighbourhood.</p><div style='overflow-x:auto'><table><tr><th>family</th><th>cell risk</th><th>scent</th><th>verified+</th><th>jump bias</th><th>plasticity</th><th>trace decay</th></tr>" + "".join(rows) + "</table></div>"
 
 
 def real_section(results):
