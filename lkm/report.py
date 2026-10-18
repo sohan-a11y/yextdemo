@@ -297,6 +297,35 @@ def v1_section(out_dir):
             + "".join(rows) + "</table>")
 
 
+def diagnose_section(out_dir):
+    """Follow-up diagnostics (lkm.diagnose): is the bottleneck capacity or information? Validation chunks only."""
+    p = os.path.join(out_dir, "diagnose.json")
+    if not os.path.exists(p):
+        return ""
+    try:
+        d = json.load(open(p))
+    except Exception:
+        return ""
+    cur = "".join(f"<tr><td>{esc(k)}</td><td>{v['auc']:.4f}</td><td>{v['ap']:.3f}</td><td>{100*v['p@3%']:.1f}%</td></tr>" for k, v in d["curve"].items())
+    nca = ""
+    for k, v in d["nca"].items():
+        diff = v.get("auc_vs_baseline")
+        dtxt = "&ndash;" if not diff else f"{diff[0]:+.4f} [{diff[1]:+.4f}, {diff[2]:+.4f}]"
+        par = f"{v['params']:,}" if "params" in v else "&ndash;"
+        nca += f"<tr><td>{esc(k)}</td><td>{par}</td><td>{v['auc']:.4f}</td><td>{100*v['p@3%']:.1f}%</td><td>{dtxt}</td></tr>"
+    return ("<h2>8. Follow-up: is it the cells' design or the information?</h2>"
+            "<p>Question: if the neurons or their wiring were better, would the cell field pull away from the tree baseline? "
+            "Everything below is scored on the 6 validation chunks of the real mesh that were not used for any fitting or selection "
+            f"({d['n_eval']:,} places, {100*d['base_rate']:.1f}% positives). The test pools were not touched.</p>"
+            "<h4>Does the strongest static baseline run out of road?</h4>"
+            "<table><tr><th>model</th><th>AUC</th><th>AP</th><th>precision in top 3%</th></tr>" + cur + "</table>"
+            "<h4>Does a bigger or better-connected cell field pull ahead?</h4>"
+            "<table><tr><th>model</th><th>parameters</th><th>AUC</th><th>top 3%</th><th>AUC gain over tree baseline [95% CI]</th></tr>" + nca + "</table>"
+            "<p><b>Reading.</b> Multiplying the cell field's parameters by 13 changes nothing (AUC 0.7874 &rarr; 0.7872); a 3&times; bigger tree model and 10&times; more training data move the baseline by about 0.002 and 0.025. "
+            "Message passing helps (one round of neighbour messages gives +0.004; eight rounds give +0.007), and then it saturates. "
+            "A cell field with no tree baseline underneath is worse than the trees (0.752, or 0.770 when large). So on this data the limit is the information in the features and graph, not the capacity or wiring of the cells.</p>")
+
+
 def timing_section(results):
     t = results.get("e5_timing") or {}
     if not t or "error" in t:
@@ -455,6 +484,7 @@ Wins: <b>{wins}</b> · ties: <b>{ties}</b> · losses: <b>{losses}</b> (of {len(t
 <canvas id="vcv" width="900" height="650"></canvas><p><button id="vplay">pause</button> <span id="vtxt" class="meta"></span></p>
 {real_section(results)}
 {timing_section(results)}
+{diagnose_section(out_dir)}
 <h2>9. Honest limitations</h2><ul>
 <li>The redesign from v1 to v2 was made after seeing v1 results on the control world's test seeds. v2 was developed on separate development worlds and judged on fresh test seeds; the real-data test pools were never used for design, but they are one fixed dataset.</li>
 <li>With 20 test worlds (synthetic) and 8 spatial test pools (real), intervals are wide enough that differences under about 2 points are not resolvable.</li>
