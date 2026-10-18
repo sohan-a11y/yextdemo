@@ -163,7 +163,34 @@ def _chunks(block_ids, nodes_per_block, target):
     return out
 
 
-def build_real(data_dir="lkm_data", seed=0, chunk_target=8000, cache=True, log=print):
+def add_language(full, data_dir, train_mask, seed, lang_edges, log, edges_thr=0.92):
+    """Append the language layer (text codes, string classes, name-neighbour features) to every place and add
+    language edges to the brand relation. Uses the August table only."""
+    from . import language as LG
+    cpath = os.path.join(data_dir, f"real_lang_s{seed}_t{edges_thr}.npz")
+    if os.path.exists(cpath):
+        z = np.load(cpath, allow_pickle=True)
+        layer = {"F": z["F"], "names": list(z["names"]), "src": z["src"], "dst": z["dst"], "text": z["text"]}
+    else:
+        a, _ = load_tables(data_dir)
+        keep = (a["operating_status"] != "permanently_closed").values
+        a = a[keep].reset_index(drop=True)
+        E = LG.cache_embeddings(None, os.path.join(data_dir, "emb_aug.npy"), log=log)[keep]
+        assert len(a) == full.n, "language layer misaligned with the dataset"
+        layer = LG.build_layer(a, E, full.xy, train_mask, edges_thr=edges_thr, seed=seed, log=log)
+        np.savez_compressed(cpath, F=layer["F"], names=np.array(layer["names"]), src=layer["src"], dst=layer["dst"], text=layer["text"])
+    ok = layer["F"].std(0) > 1e-6                      # drop columns that are constant across the city
+    layer = dict(layer, F=layer["F"][:, ok], names=[n for n, k in zip(layer["names"], ok) if k])
+    edges = dict(full.edges)
+    if lang_edges:
+        s0, d0 = edges["br"]
+        edges["br"] = (np.concatenate([s0, layer["src"]]), np.concatenate([d0, layer["dst"]]))
+    meta = dict(full.meta); meta["language"] = {"features": len(layer["names"]), "edges": int(len(layer["src"])) if lang_edges else 0}
+    return Dataset(full.name + "+lang", np.concatenate([full.X, layer["F"]], 1), full.y, edges, full.xy, list(full.feat_names) + layer["names"],
+                   full.agg_cols, full.age_col, meta, full.y_alt, layer["text"])
+
+
+def build_real(data_dir="lkm_data", seed=0, chunk_target=8000, cache=True, log=print, language=False, lang_edges=True):
     cpath = os.path.join(data_dir, "real_built.npz")
     if cache and os.path.exists(cpath):
         z = np.load(cpath, allow_pickle=True)
@@ -206,6 +233,9 @@ def build_real(data_dir="lkm_data", seed=0, chunk_target=8000, cache=True, log=p
     te_b, va_b, tr_b = set(ub[perm[:n_te]]), set(ub[perm[n_te:n_te + n_va]]), list(ub[perm[n_te + n_va:]])
     split = np.where(np.isin(blk, list(te_b)), 2, np.where(np.isin(blk, list(va_b)), 1, 0))
     nb = dict(zip(ub, counts))
+    if language:
+        full = add_language(full, data_dir, split == 0, seed, lang_edges, log)
+        log(f"[real] language layer: {full.meta['language']} -> {full.X.shape[1]} features")
     chunk_list = _chunks(tr_b, nb, chunk_target)
     train = [full.subset(np.where(np.isin(blk, ch))[0], name=f"train-chunk{i}") for i, ch in enumerate(chunk_list)]
     val = full.subset(np.where(split == 1)[0], name="val")

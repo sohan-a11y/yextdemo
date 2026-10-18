@@ -20,11 +20,20 @@ from .metrics import forecast_report, bootstrap_ci, paired_diff_ci
 
 CFG_FULL = dict(n_train=8, n_val=6, n_test=20, world_n=5000, nca_steps=600, es_gens=40, es_gens_ablation=30, es_pairs=10, es_eps=4, es_proc=4,
                 seeds=3, budget_frac=0.03, rounds=8, rhos=(0.1, 0.25, 0.5, 1.0), real_nca_steps=500, real_seeds=3)
+CFG_FINAL = dict(CFG_FULL, vocab=16, comm="lex", lang_real=True, lang_edges=True)
 CFG_SMOKE = dict(n_train=3, n_val=3, n_test=2, world_n=1500, nca_steps=40, es_gens=2, es_pairs=3, es_eps=2, es_proc=2,
                  seeds=1, budget_frac=0.03, rounds=6, rhos=(0.25, 1.0), real_nca_steps=30, real_seeds=1)
 
 VARIANTS = {"full": {}, "no_scent": {"use_scent": False}, "no_plastic": {"plastic": False}, "workers_only": {"use_cells": False},
-            "blind": {"informed": False}}
+            "blind": {"informed": False}, "no_words": {}}
+
+
+def variant_flags(key, vocab):
+    """Organism switches for a variant. Workers hear the cell field's words unless the variant is 'no_words'."""
+    f = dict(VARIANTS[key]) if key in VARIANTS else {}
+    if vocab and key not in ("no_words", "workers_only"):
+        f["vocab"] = vocab
+    return f
 
 
 def log0(*a):
@@ -37,7 +46,7 @@ class Models:
 
 # ------------------------------------------------------------------------------------------ fitting
 def fit_models(tag, train, es_sets, cache_dir, cfg, nca_steps, variants=("full", "no_scent", "no_plastic", "workers_only", "blind"),
-               log=log0, val_for_nca=None):
+               log=log0, val_for_nca=None, vocab=0, comm="cont"):
     from . import nca_train as NT
     from .es import train_es
     path = os.path.join(cache_dir, f"models_{tag}.pkl")
@@ -55,7 +64,8 @@ def fit_models(tag, train, es_sets, cache_dir, cfg, nca_steps, variants=("full",
         log(f"[{tag}] OOF base logits + NCA training")
         oof = oof_scores(train, lambda: GBDT("graph"), folds=4)
         vds = val_for_nca if val_for_nca is not None else es_sets[0]
-        M.P, M.nca_info = NT.train(train, oof, val=vds, val_base=M.graph.score(vds), steps=nca_steps, log=log)
+        M.P, M.nca_info = NT.train(train, oof, val=vds, val_base=M.graph.score(vds), steps=nca_steps, log=log, V=vocab, comm=comm)
+        M.vocab, M.comm = vocab, comm
         done.add("nca")
     M.thetas = getattr(M, "thetas", {}); M.es_info = getattr(M, "es_info", {})
     for v in variants:
@@ -63,8 +73,9 @@ def fit_models(tag, train, es_sets, cache_dir, cfg, nca_steps, variants=("full",
             continue
         log(f"[{tag}] evolving workers: variant={v}")
         bases = [M.graph.score(d) for d in es_sets]
-        th, info = train_es(es_sets, bases, M.P, VARIANTS[v], cfg["budget_frac"], cfg["rounds"], gens=cfg["es_gens"] if v == "full" else cfg.get("es_gens_ablation", cfg["es_gens"]),
-                            pairs=cfg["es_pairs"], episodes_per_eval=cfg["es_eps"], n_proc=cfg["es_proc"], log=log)
+        fl = variant_flags(v, getattr(M, "vocab", 0))
+        th, info = train_es(es_sets, bases, M.P, fl, cfg["budget_frac"], cfg["rounds"], gens=cfg["es_gens"] if v == "full" else cfg.get("es_gens_ablation", cfg["es_gens"]),
+                            pairs=cfg["es_pairs"], episodes_per_eval=cfg["es_eps"], n_proc=cfg["es_proc"], log=log, vocab=fl.get("vocab", 0))
         M.thetas[v] = th; M.es_info[v] = info
         M.stage = done; pickle.dump(M, open(path, "wb"))
     M.stage = done
@@ -104,7 +115,7 @@ def build_policy(s, ds, base, M, seed=0, record=False, theta_override=None):
         return CellsOnly(M.P, base, adapt=ad is not None, eps=s.get("eps", 0.0), l2=ad if ad else 40.0)
     if m == "org":
         key = s.get("theta", "full")
-        flags = dict(VARIANTS[key]) if key in VARIANTS else {}
+        flags = variant_flags(key, getattr(M, "vocab", 0))
         theta = theta_override if theta_override is not None else M.thetas[key]
         return Organism(theta, P=M.P, base=base, cell_adapt=ad is not None, adapt_l2=ad if ad else 40.0,
                         evolve=s.get("evolve", True), seed=seed, record=record, **flags)
@@ -244,6 +255,8 @@ def e2_specs(pick, thetas=None):
     for v in ("no_scent", "no_plastic", "blind"):
         if v in have:
             sp.append(dict(org, theta=v))
+    if "no_words" in have:
+        sp.append(dict(org, theta="no_words"))
     if "workers_only" in have:
         sp.append({"m": "org", "theta": "workers_only", "adapt": None})
     sp.append(dict(org, theta="full", evolve=False))

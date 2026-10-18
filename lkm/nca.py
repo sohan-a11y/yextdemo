@@ -53,23 +53,52 @@ def build_inp(X, base, rev_pos=None, rev_neg=None, miss=None):
     return np.concatenate([np.nan_to_num(X).astype(np.float32), b[:, None], rp[:, None], rn[:, None], ms[:, None]], 1)
 
 
-def init_params(din, C=C_DEFAULT, H=H_DEFAULT, seed=0):
+def init_params(din, C=C_DEFAULT, H=H_DEFAULT, seed=0, V=0, comm="cont"):
+    """V > 0 gives the cells a vocabulary of V words. comm: 'cont' neighbours hear the continuous state,
+    'lex' neighbours hear only words (a discrete language), 'both' state and words."""
     r = np.random.default_rng(seed)
-    return {"We": (r.normal(0, 1, (din, C)) / np.sqrt(din)).astype(np.float32), "be": np.zeros(C, np.float32),
-            "W1": (r.normal(0, 1, (4 * C, H)) / np.sqrt(4 * C)).astype(np.float32), "b1": np.zeros(H, np.float32),
-            "W2": (r.normal(0, 0.1, (H, C)) / np.sqrt(H)).astype(np.float32), "b2": np.zeros(C, np.float32),
-            "wo": np.zeros(C, np.float32), "bo": np.zeros((), np.float32)}
+    comm = comm if V else "cont"
+    nin = {"cont": 4 * C, "lex": C + 3 * V, "both": 4 * C + 3 * V}[comm]
+    P = {"We": (r.normal(0, 1, (din, C)) / np.sqrt(din)).astype(np.float32), "be": np.zeros(C, np.float32),
+         "W1": (r.normal(0, 1, (nin, H)) / np.sqrt(nin)).astype(np.float32), "b1": np.zeros(H, np.float32),
+         "W2": (r.normal(0, 0.1, (H, C)) / np.sqrt(H)).astype(np.float32), "b2": np.zeros(C, np.float32),
+         "wo": np.zeros(C, np.float32), "bo": np.zeros((), np.float32)}
+    if V and comm != "cont":
+        P["Wt"] = (r.normal(0, 1, (C, V)) / np.sqrt(C)).astype(np.float32)
+        P["bt"] = np.zeros(V, np.float32)
+    return P
+
+
+def comm_mode(P):
+    """Infer the communication mode of a parameter set from its shapes."""
+    if "Wt" not in P:
+        return "cont"
+    C, V = P["Wt"].shape
+    return "lex" if P["W1"].shape[0] == C + 3 * V else "both"
 
 
 def _agg(s, A):
     return A @ s
 
 
+def words(P, s):
+    """The word (0..V-1) each cell is 'saying' given its state s."""
+    return (s @ P["Wt"] + P["bt"]).argmax(1)
+
+
 def forward(P, inp, tabs, T=T_DEFAULT, readout=None):
     """Expected-update (deterministic) forward pass. Returns (delta_logit, final_state)."""
     s = np.tanh(inp @ P["We"] + P["be"])
+    mode = comm_mode(P)
     for _ in range(T):
-        z = np.concatenate([s] + [_agg(s, A) for A in tabs], 1)
+        parts = [s]
+        if mode in ("cont", "both"):
+            parts += [_agg(s, A) for A in tabs]
+        if mode in ("lex", "both"):
+            V = P["Wt"].shape[1]
+            hot = np.eye(V, dtype=np.float32)[words(P, s)]
+            parts += [_agg(hot, A) for A in tabs]
+        z = np.concatenate(parts, 1)
         h = np.tanh(z @ P["W1"] + P["b1"])
         s = s + KEEP * ALPHA * (h @ P["W2"] + P["b2"])
     wo, bo = (P["wo"], P["bo"]) if readout is None else readout

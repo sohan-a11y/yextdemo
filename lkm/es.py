@@ -7,7 +7,7 @@ the same episodes and seeds (common random numbers) to cut noise.
 import time
 import numpy as np
 import multiprocessing as mp
-from .organism import Organism, init_genome, P_TOTAL
+from .organism import Organism, init_genome, p_total
 
 _CTX = {}
 
@@ -33,9 +33,9 @@ def _episode(args):
 
 
 def train_es(datasets, bases, P, flags, budget_frac=0.03, rounds=8, gens=40, pairs=12, sigma=0.08, lr=0.03,
-             episodes_per_eval=3, seed=0, n_proc=4, log=print, theta0=None, check_every=5):
+             episodes_per_eval=3, seed=0, n_proc=4, log=print, theta0=None, check_every=5, vocab=0):
     rng = np.random.default_rng(seed)
-    theta = init_genome(seed) if theta0 is None else np.asarray(theta0, float).copy()
+    theta = init_genome(seed, vocab) if theta0 is None else np.asarray(theta0, float).copy()
     payload = {"datasets": datasets, "bases": bases, "P": P, "budget_frac": budget_frac, "rounds": rounds}
     single_thread_env()
     ctx = mp.get_context("spawn")
@@ -50,7 +50,7 @@ def train_es(datasets, bases, P, flags, budget_frac=0.03, rounds=8, gens=40, pai
         log(f"[es] start fitness {f0:.3f}")
         best, best_theta = f0, theta.copy()
         for g in range(1, gens + 1):
-            eps = rng.normal(size=(pairs, P_TOTAL))
+            eps = rng.normal(size=(pairs, p_total(vocab)))
             cands = [theta + sigma * e for e in eps] + [theta - sigma * e for e in eps]
             ep = rng.choice(len(datasets), episodes_per_eval, replace=len(datasets) < episodes_per_eval)
             sd = rng.integers(1 << 30, size=episodes_per_eval)

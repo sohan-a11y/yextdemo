@@ -10,10 +10,20 @@ jax.config.update("jax_enable_x64", False)
 def _forward_jax(P, inp, tabs, key, T, train):
     s = jnp.tanh(inp @ P["We"] + P["be"])
     keys = jax.random.split(key, T)
+    mode = N.comm_mode(P)
+
+    def agg(x):
+        return [(x[i] * m[..., None]).sum(1) / jnp.maximum(m.sum(1, keepdims=True), 1.0) for i, m in tabs]
 
     def step(s, k):
-        z = jnp.concatenate([s] + [
-            (s[i] * m[..., None]).sum(1) / jnp.maximum(m.sum(1, keepdims=True), 1.0) for i, m in tabs], 1)
+        parts = [s]
+        if mode in ("cont", "both"):
+            parts += agg(s)
+        if mode in ("lex", "both"):
+            p = jax.nn.softmax(s @ P["Wt"] + P["bt"], axis=1)
+            hard = jax.nn.one_hot(jnp.argmax(p, axis=1), p.shape[1])
+            parts += agg(hard + p - jax.lax.stop_gradient(p))        # straight-through: words forward, softmax gradient back
+        z = jnp.concatenate(parts, 1)
         h = jnp.tanh(z @ P["W1"] + P["b1"])
         ds = N.ALPHA * (h @ P["W2"] + P["b2"])
         if train:
@@ -42,13 +52,18 @@ def _prepare(ds, base, bucket=2048):
             "tabs": [(jnp.asarray(_pad(i, nn)), jnp.asarray(_pad(m, nn))) for i, m in tabs]}
 
 
-def make_loss(T, lam):
+def make_loss(T, lam, lam_vocab=0.02):
     def loss(P, key, inp, base, y, valid, rev_mask, tabs):
-        d, _ = _forward_jax(P, inp, tabs, key, T, True)
+        d, s_final = _forward_jax(P, inp, tabs, key, T, True)
         z = base + d
         bce = jnp.maximum(z, 0) - z * y + jnp.log1p(jnp.exp(-jnp.abs(z)))
         w = valid * (1.0 - rev_mask)
-        return (bce * w).sum() / jnp.maximum(w.sum(), 1.0) + lam * ((d ** 2) * w).sum() / jnp.maximum(w.sum(), 1.0)
+        out = (bce * w).sum() / jnp.maximum(w.sum(), 1.0) + lam * ((d ** 2) * w).sum() / jnp.maximum(w.sum(), 1.0)
+        if "Wt" in P:               # keep the vocabulary in use: reward a spread-out distribution of words over cells
+            pw = jax.nn.softmax(s_final @ P["Wt"] + P["bt"], axis=1)
+            pm = (pw * valid[:, None]).sum(0) / jnp.maximum(valid.sum(), 1.0)
+            out = out - lam_vocab * (-(pm * jnp.log(pm + 1e-9)).sum())
+        return out
     return loss
 
 
@@ -61,10 +76,10 @@ def evaluate(P, ds, base, T=N.T_DEFAULT):
 
 
 def train(train_sets, base_list, val=None, val_base=None, steps=600, lr=3e-3, seed=0, T=N.T_DEFAULT,
-          C=N.C_DEFAULT, H=N.H_DEFAULT, lam=1e-3, log=print, eval_every=100, miss_aug=True, clip=1.0):
+          C=N.C_DEFAULT, H=N.H_DEFAULT, lam=1e-3, log=print, eval_every=100, miss_aug=True, clip=1.0, V=0, comm="cont"):
     rng = np.random.default_rng(seed)
     din = train_sets[0].X.shape[1] + 4
-    P = {k: jnp.asarray(v) for k, v in N.init_params(din, C, H, seed).items()}
+    P = {k: jnp.asarray(v) for k, v in N.init_params(din, C, H, seed, V=V, comm=comm).items()}
     prep = [_prepare(d, b) for d, b in zip(train_sets, base_list)]
     loss_fn = make_loss(T, lam)
     grad_fn = jax.jit(jax.value_and_grad(loss_fn))

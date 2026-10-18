@@ -7,6 +7,8 @@ along relations make the graph informative: a chain-wide event, a regional event
 World kinds
   control    no graph effects at all (a graph can only add noise)  -> sanity check
   contagion  hidden regional/brand/address shocks; recent events are observed with probability rho
+  lexical    chain shocks are strong but the brand field is filled for only half the members; with lang=True every
+             place has a name code whose similarity reveals the chain (what reading names buys)
   shifted    like contagion but with *different* parameters (age effect reversed, new category risks,
              stronger brand shocks) -> tests adaptation of models trained on 'contagion'
 The generator is deliberately documented because results on synthetic data depend on its assumptions;
@@ -34,6 +36,7 @@ class Dataset:
     age_col: int
     meta: dict = field(default_factory=dict)
     y_alt: np.ndarray = None      # optional secondary label
+    text: np.ndarray = None       # optional human-readable description per entity ('name | category')
     _g: Graph = None
 
     @property
@@ -55,7 +58,7 @@ class Dataset:
             edges[r] = (ls[ok], ld[ok])
         return Dataset(name or self.name, self.X[idx], self.y[idx], edges, self.xy[idx],
                        self.feat_names, self.agg_cols, self.age_col, dict(self.meta),
-                       None if self.y_alt is None else self.y_alt[idx])
+                       None if self.y_alt is None else self.y_alt[idx], None if self.text is None else self.text[idx])
 
 
 def _sigmoid(z):
@@ -66,11 +69,12 @@ PARAMS = {
     "control":   dict(a_age=0.6, a_src=-0.4, a_conf=-0.7, cat_sd=0.6, s_sp=0.0, s_br=0.0, s_ad=0.0, s_id=0.7, own=0.0),
     "contagion": dict(a_age=0.5, a_src=-0.3, a_conf=-0.5, cat_sd=0.5, s_sp=1.0, s_br=1.1, s_ad=0.7, s_id=0.5, own=0.4),
     "cascade":   dict(a_age=0.4, a_src=-0.3, a_conf=-0.4, cat_sd=0.4, s_sp=2.0, s_br=2.6, s_ad=1.0, s_id=0.4, own=0.3),
+    "lexical":   dict(a_age=0.4, a_src=-0.3, a_conf=-0.4, cat_sd=0.4, s_sp=0.8, s_br=2.4, s_ad=0.5, s_id=0.4, own=0.3),
     "shifted":   dict(a_age=-0.4, a_src=0.3, a_conf=0.2, cat_sd=0.9, s_sp=0.7, s_br=1.8, s_ad=0.4, s_id=0.5, own=0.4),
 }
 
 
-def make_world(seed, n=5000, kind="contagion", rho=0.5, base_rate=0.10, cat_seed=None):
+def make_world(seed, n=5000, kind="contagion", rho=0.5, base_rate=0.10, cat_seed=None, lang=False):
     """Generate one world. `cat_seed` fixes category risks across worlds of the same family."""
     rng = np.random.default_rng(seed)
     P = PARAMS[kind]
@@ -94,7 +98,21 @@ def make_world(seed, n=5000, kind="contagion", rho=0.5, base_rate=0.10, cat_seed
         grp = free[p:p + size]
         xy[grp] = xy[grp[0]] + rng.normal(0, 0.002, (len(grp), 2))
         addr[grp] = a_id; a_id += 1; p += size
-    edges = {"sp": knn_edges(xy, 6), "br": group_edges(brand, 2, rng), "ad": group_edges(addr, 2, rng)}
+    brand_seen = brand
+    if kind == "lexical":                      # the brand field is filled in for only half of the chain members
+        brand_seen = np.where(rng.random(n) < 0.5, brand, -1)
+    edges = {"sp": knn_edges(xy, 6), "br": group_edges(brand_seen, 2, rng), "ad": group_edges(addr, 2, rng)}
+    name_code = None
+    if kind == "lexical" and lang:             # language: every place has a name; chain members share a name family
+        from .language import semantic_edges
+        cent = rng.normal(size=(max(b_id, 1), 16))
+        code = rng.normal(size=(n, 16))
+        mem = brand >= 0
+        code[mem] = cent[brand[mem]] + 0.2 * rng.normal(size=(int(mem.sum()), 16))
+        code /= np.linalg.norm(code, axis=1, keepdims=True)
+        ls, ld = semantic_edges(code.astype(np.float32), np.ones(n, bool), k=3, thr=0.9, seed=seed)
+        edges["br"] = (np.concatenate([edges["br"][0], ls]), np.concatenate([edges["br"][1], ld]))
+        name_code = (code * 4.0).astype(np.float32)
     G = Graph.from_edges(n, edges)
     # ---- attributes
     age_raw = rng.lognormal(4.0, 0.8, n)
@@ -132,8 +150,11 @@ def make_world(seed, n=5000, kind="contagion", rho=0.5, base_rate=0.10, cat_seed
     y = (rng.random(n) < _sigmoid(z + bias)).astype(np.int8)
     X = np.column_stack([age, nsrc, conf, has_web, has_phone] + [(cat == i).astype(np.float32) for i in range(8)]
                         + [ev[0].astype(np.float32), ev[1].astype(np.float32), (brand >= 0).astype(np.float32)])
-    return Dataset(f"{kind}-{seed}", X.astype(np.float32), y, edges, xy.astype(np.float32), FEATS,
-                   AGG_COLS, AGE_COL, {"kind": kind, "rho": rho, "seed": seed, "base_rate": float(y.mean())})
+    feats = FEATS
+    if name_code is not None:
+        X = np.concatenate([X, name_code], 1); feats = FEATS + [f"nm{i}" for i in range(16)]
+    return Dataset(f"{kind}-{seed}", X.astype(np.float32), y, edges, xy.astype(np.float32), feats,
+                   AGG_COLS, AGE_COL, {"kind": kind, "rho": rho, "seed": seed, "base_rate": float(y.mean()), "lang": bool(lang)})
 
 
 def _bias(z, target, iters=40):
@@ -147,5 +168,5 @@ def _bias(z, target, iters=40):
     return (lo + hi) / 2
 
 
-def make_bundle(kind, seeds, n=5000, rho=0.5, base_rate=0.10):
-    return [make_world(s, n=n, kind=kind, rho=rho, base_rate=base_rate) for s in seeds]
+def make_bundle(kind, seeds, n=5000, rho=0.5, base_rate=0.10, lang=False):
+    return [make_world(s, n=n, kind=kind, rho=rho, base_rate=base_rate, lang=lang) for s in seeds]

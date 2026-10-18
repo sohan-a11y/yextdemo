@@ -8,7 +8,9 @@ from .metrics import paired_diff_ci, bootstrap_ci
 
 C_ORG, C_BASE, C_CELL, C_GREY = "#1f9d8a", "#5a6b8c", "#d98a1f", "#9aa5b1"
 FAMILY_LABEL = {"syn_control": "Control world (no graph effects)", "syn_contagion": "Contagion world", "syn_cascade": "Cascade world (clustered events)",
-                "syn_shifted": "Shifted world (trained on contagion)", "real": "REAL: Overture Maps, Brooklyn/NYC, Aug→Sep 2026"}
+                "syn_shifted": "Shifted world (trained on contagion)", "real": "REAL: Overture Maps, Brooklyn/NYC, Aug→Sep 2026",
+                "syn_lexical_nolang": "Lexical world, names unreadable (brand field half-filled)", "syn_lexical_lang": "Lexical world, names readable"}
+FAM_ORDER = ("syn_control", "syn_contagion", "syn_cascade", "syn_lexical_nolang", "syn_lexical_lang", "syn_shifted", "real")
 
 
 def b64fig(fig):
@@ -202,6 +204,7 @@ def contrast_rows(f):
              ("plasticity: full vs no plasticity", org, _find(e2, lambda n: n.startswith("org:no_plastic"))),
              ("evolution at run time: full vs frozen genomes", org, _find(e2, lambda n: "no_evo" in n)),
              ("informed foraging vs blind foraging", org, _find(e2, lambda n: n.startswith("org:blind"))),
+             ("workers hearing the cells' words: full vs deaf workers", org, _find(e2, lambda n: n.startswith("org:no_words"))),
              ("workers + cells vs workers alone", org, _find(e2, lambda n: n.startswith("org:workers_only"))),
              ("cell-readout adaptation: on vs off", org, _find(e2, lambda n: "no_adapt" in n))]
     rows = []
@@ -244,7 +247,7 @@ def plain_summary(results):
         lines.append(t + "</li>")
     wins, ties = [], 0
     abl = {"scent": [0, 0, 0], "plasticity": [0, 0, 0], "evolution": [0, 0, 0]}
-    for k in ("syn_control", "syn_contagion", "syn_cascade", "syn_shifted"):
+    for k in FAM_ORDER[:-1]:
         f = results.get(k, {})
         if not (isinstance(f, dict) and "e2" in f):
             continue
@@ -326,6 +329,124 @@ def diagnose_section(out_dir):
             "A cell field with no tree baseline underneath is worse than the trees (0.752, or 0.770 when large). So on this data the limit is the information in the features and graph, not the capacity or wiring of the cells.</p>")
 
 
+def lang_study_section(out_dir):
+    """Validation-only study of what reading language buys (lkm.langstudy)."""
+    p = os.path.join(out_dir, "langstudy.json")
+    if not os.path.exists(p):
+        return ""
+    try:
+        L = json.load(open(p))
+    except Exception:
+        return ""
+    rows = []
+
+    def row(label, r, extra=""):
+        d = r.get("auc_vs_gbdt")
+        dtxt = "&ndash;" if not d else f"{d[0]:+.4f} <small>[{d[1]:+.4f}, {d[2]:+.4f}]</small>"
+        rows.append(f"<tr><td>{esc(label)}{extra}</td><td>{r['auc']:.4f}</td><td>{100*r['p@3%']:.1f}%</td><td>{dtxt}</td></tr>")
+    r0 = L["R0"]
+    rows.append("<tr class='grp'><td colspan='4'>No language (previous build): 50 features, brand/space/address edges</td></tr>")
+    row("boosted trees (graph features)", r0["gbdt_graph"]); row("cells, continuous messages", r0["cells_cont"], "")
+    for name, title in (("R1", "+ reading: text features (MiniLM name/category code, website/phone/address classes, name-neighbour duplicates)"),
+                        ("R2", "+ reading and language edges (same-name families joined into the brand relation)")):
+        if name not in L:
+            continue
+        rows.append(f"<tr class='grp'><td colspan='4'>{esc(title)} &middot; {L[name]['features']} features</td></tr>")
+        row("boosted trees (graph features)", L[name]["gbdt_graph"])
+        for k, lab in (("cont", "cells, continuous messages"), ("lex", "cells, words only (a discrete language)"), ("both", "cells, words + continuous")):
+            if f"cells_{k}" in L[name]:
+                row(lab, L[name][f"cells_{k}"])
+    dec = L.get("decision", {})
+    gain = ""
+    if "R2" in L:
+        gain = (f"<p>Reading alone lifts the boosted trees from AUC {r0['gbdt_graph']['auc']:.4f} to {L['R1']['gbdt_graph']['auc']:.4f}"
+                + (f"; with language edges {L['R2']['gbdt_graph']['auc']:.4f}" if 'R2' in L else "") + ". The conventional baseline receives exactly the same text inputs and edges as the cells.</p>")
+    return ("<h2>Language study (validation data only)</h2><p>What does it buy to let the organism read? Scored on the six validation chunks that no model was fitted or selected on "
+            "(test pools untouched). AUC pools all validation places; the last column is the cells' AUC gain over the trees <i>on the same inputs</i>, with a 95% bootstrap interval.</p>"
+            "<table><tr><th>model</th><th>AUC</th><th>top&nbsp;3% precision</th><th>cells &minus; trees</th></tr>" + "".join(rows) + "</table>" + gain +
+            f"<p class='meta'>Pre-declared rule: {esc(dec.get('rule', ''))}. Chosen: communication <b>{esc(dec.get('comm'))}</b>, dataset <b>{esc(dec.get('dataset'))}</b>.</p>")
+
+
+def speech_html(real):
+    sp = (real or {}).get("speech")
+    if not sp or "error" in sp:
+        return ""
+    rows = []
+    for e in sp.get("dictionary", []):
+        if not e.get("n"):
+            continue
+        ex = "<br>".join(esc(x) for x in e.get("examples", [])[:2])
+        tr = esc("; ".join(e.get("traits", [])) or "no single trait stands out")
+        rows.append(f"<tr><td>{e['word']}</td><td>{100*e['share']:.1f}%</td><td>{100*e['change_rate']:.0f}% <small>({e['lift']:.1f}&times;)</small></td><td>{tr}<small>{ex}</small></td></tr>")
+    log = "".join(f"<li>{esc(x)}</li>" for x in sp.get("worker_log", [])[:10])
+    ex = "".join(f"<li>{esc(x)}</li>" for x in sp.get("explanations", []))
+    return ("<h3>What the organism says</h3><p>The cells talk to each other in a learned vocabulary: each cell emits one word per step and its neighbours hear only words. "
+            "The table is the dictionary, measured on validation places (share of places saying the word, how often those places later changed, what they have in common). "
+            "Words have no names; the descriptions are read off the statistics. The sentences below are templates filled with the organism's own numbers; this is not a language model.</p>"
+            "<table><tr><th>word</th><th>share</th><th>changed later</th><th>what they have in common</th></tr>" + "".join(rows) + "</table>"
+            "<h4>Why the top-risk places were flagged (one test pool, before any verification)</h4><ul>" + ex + "</ul>"
+            "<h4>A worker log (same pool, recorded game)</h4><ul>" + log + "</ul>")
+
+
+def v2_compare_section(results):
+    p = os.path.join("lkm_out", "results.json")
+    real = results.get("real", {})
+    if not (os.path.exists(p) and isinstance(real, dict) and "e2" in real):
+        return ""
+    try:
+        old = json.load(open(p)).get("real", {})
+    except Exception:
+        return ""
+    if "e2" not in old:
+        return ""
+
+    def pick(f):
+        e2 = f["e2"]; st = f["e2_verdict"]["strongest_baseline"]
+        org = next((n for n in e2 if is_primary(n)), None); cells = next((n for n in e2 if n.startswith("cells[")), None)
+        return e2[st]["mean"], e2[cells]["mean"] if cells else None, e2[org]["mean"] if org else None, e2[st]["per_ds"], (e2[cells]["per_ds"] if cells else None), (e2[org]["per_ds"] if org else None)
+    o, n = pick(old), pick(real)
+    rows = "".join(f"<tr><td>{lab}</td><td>{100*a:.1f}%</td><td>{100*b:.1f}%</td></tr>" for lab, a, b in
+                   (("strongest conventional baseline", o[0], n[0]), ("cell field alone", o[1], n[1]), ("full organism", o[2], n[2])) if a is not None and b is not None)
+    e1 = ""
+    if old.get("e1") and real.get("e1") and len(old["e1"]["gbdt_graph"]["auc"]) == len(real["e1"]["gbdt_graph"]["auc"]):
+        d = paired_diff_ci(real["e1"]["gbdt_graph"]["auc"], old["e1"]["gbdt_graph"]["auc"])
+        d2 = paired_diff_ci(real["e1"]["nca_residual"]["auc"], old["e1"]["nca_residual"]["auc"])
+        e1 = (f"<p>One-shot forecasting on the same test pools: boosted trees with language inputs vs without: AUC {d[0]:+.4f} [{d[1]:+.4f}, {d[2]:+.4f}] {verdict_chip('WIN' if d[1] > 0 else 'LOSS' if d[2] < 0 else 'TIE')}; "
+              f"cell field with language vs without: {d2[0]:+.4f} [{d2[1]:+.4f}, {d2[2]:+.4f}] {verdict_chip('WIN' if d2[1] > 0 else 'LOSS' if d2[2] < 0 else 'TIE')}.</p>")
+    return ("<h2>What changed from the previous build</h2><p>Same real test pools, same game, same budget. The previous build had no language; the final build reads text and the cells speak in words.</p>"
+            "<table><tr><th>positives found per verification</th><th>previous</th><th>final</th></tr>" + rows + "</table>" + e1)
+
+
+def is_primary(n):
+    return n.startswith("org:full") and "no_evo" not in n and "no_adapt" not in n
+
+
+def lexical_section(results):
+    a, b = results.get("syn_lexical_nolang"), results.get("syn_lexical_lang")
+    if not (isinstance(a, dict) and isinstance(b, dict) and "e2" in a and "e2" in b):
+        return ""
+    def best(f):
+        return f["e2"][f["e2_verdict"]["strongest_baseline"]]["per_ds"]
+    def cells(f):
+        n = next((x for x in f["e2"] if x.startswith("cells[")), None); return f["e2"][n]["per_ds"] if n else None
+    def org(f):
+        n = next((x for x in f["e2"] if is_primary(x)), None); return f["e2"][n]["per_ds"] if n else None
+    rows = ""
+    for lab, fa, fb in (("strongest conventional baseline", best(a), best(b)), ("cell field alone", cells(a), cells(b)), ("full organism", org(a), org(b))):
+        if fa is None or fb is None:
+            continue
+        d = paired_diff_ci(fb, fa) if len(fa) == len(fb) else (float(np.mean(fb) - np.mean(fa)), float("nan"), float("nan"), float("nan"))
+        rows += f"<tr><td>{lab}</td><td>{100*np.mean(fa):.1f}%</td><td>{100*np.mean(fb):.1f}%</td><td>{100*d[0]:+.1f} <small>[{100*d[1]:+.1f}, {100*d[2]:+.1f}]</small></td></tr>"
+    return ("<h3>Mechanism check: does reading names help when the truth is known?</h3><p>In the lexical world half of each chain's members have no brand link; the chain is only visible through name similarity. "
+            "With language switched on, every place has a name code and same-name places are joined in the brand relation, for every method alike.</p>"
+            "<table><tr><th>positives found per verification</th><th>names unreadable</th><th>names readable</th><th>gain from reading</th></tr>" + rows + "</table>")
+
+
+def build_language_sections(results, out_dir):
+    real = results.get("real", {})
+    return lang_study_section(out_dir) + lexical_section(results) + speech_html(real) + v2_compare_section(results)
+
+
 def timing_section(results):
     t = results.get("e5_timing") or {}
     if not t or "error" in t:
@@ -340,7 +461,7 @@ def timing_section(results):
 
 def tally_cells(results):
     out = []
-    for k in ("syn_control", "syn_contagion", "syn_cascade", "syn_shifted", "real"):
+    for k in FAM_ORDER:
         f = results.get(k, {})
         if isinstance(f, dict) and "e2" in f:
             for label, d, v in contrast_rows(f):
@@ -360,14 +481,19 @@ def build_viewer(out_dir, results, cfg):
     M = pickle.load(open(p, "rb"))
     ds = make_world(4242, n=800, kind="contagion")
     base = M.graph.score(ds)
-    org = Organism(M.thetas["full"], P=M.P, base=base, record=True, seed=3, adapt_l2=40.0)
+    V = getattr(M, "vocab", 0)
+    org = Organism(M.thetas["full"], P=M.P, base=base, record=True, seed=3, adapt_l2=40.0, vocab=V)
     r = run_game(ds, org, 0.12, 8, 7)
+    words = None
+    if V and "Wt" in M.P:
+        from . import nca as N
+        words = N.words(M.P, N.forward(M.P, N.build_inp(ds.X, base), N.tables(ds.graph()))[1]).tolist()
     sp = ds.edges["sp"]
     es = sorted({tuple(sorted((int(a), int(b)))) for a, b in zip(*sp)})
     xy = ds.xy - ds.xy.mean(0)
     xy = xy / np.abs(xy).max()
     data = {"xy": np.round(xy, 4).tolist(), "edges": [list(e) for e in es[::2]], "y": ds.y.tolist(), "rounds": org.rec,
-            "found": r["found_rounds"], "B": r["B"], "n_pos": r["n_pos"]}
+            "found": r["found_rounds"], "B": r["B"], "n_pos": r["n_pos"], "words": words, "V": V}
     return data
 
 
@@ -384,7 +510,7 @@ const found=[0];
 function frame(now){const dt=Math.max(0,Math.min(0.1,(now-last)/1000)); last=now; if(playing){t+=dt*1.6; if(t>=R*(TICKS+1.2)){t=0; known.fill(0); found.length=0; found.push(0)}}
  draw(); requestAnimationFrame(frame)}
 function stateAt(t){const per=TICKS+1.2; const r=Math.max(0,Math.min(R-1,Math.floor(t/per))); const lt=Math.max(0,t-r*per); return [r,lt]}
-let lastRound=-1;
+let lastRound=-1, showWords=false;
 function draw(){ctx.clearRect(0,0,W,H); const [r,lt]=stateAt(t); const rd=D.rounds[r];
  if(r!==lastRound){ // reveal results of previous rounds
    for(let q=0;q<r;q++){D.rounds[q].ids.forEach((id,k)=>{known[id]=D.rounds[q].labels[k]?2:1})} lastRound=r}
@@ -392,7 +518,7 @@ function draw(){ctx.clearRect(0,0,W,H); const [r,lt]=stateAt(t); const rd=D.roun
  ctx.lineWidth=1; ctx.strokeStyle='rgba(120,140,170,.18)'; ctx.beginPath(); D.edges.forEach(e=>{const a=P(e[0]),b=P(e[1]); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1])}); ctx.stroke();
  for(let i=0;i<D.xy.length;i++){const p=P(i); const rad=Math.max(2,W*0.0045);
    if(hit&&hit[i]>0.02){const g=ctx.createRadialGradient(p[0],p[1],0,p[0],p[1],rad*7*Math.min(1,hit[i]*3)); g.addColorStop(0,'rgba(255,190,80,.55)'); g.addColorStop(1,'rgba(255,190,80,0)'); ctx.fillStyle=g; ctx.beginPath(); ctx.arc(p[0],p[1],rad*7,0,6.3); ctx.fill()}
-   ctx.beginPath(); ctx.arc(p[0],p[1],rad,0,6.3); ctx.fillStyle=known[i]===2?'#ff6b6b':known[i]===1?'rgba(150,160,175,.9)':'rgba(120,140,170,.55)'; ctx.fill()}
+   ctx.beginPath(); ctx.arc(p[0],p[1],rad,0,6.3); ctx.fillStyle=known[i]===2?'#ff6b6b':known[i]===1?'rgba(150,160,175,.9)':(showWords&&D.words)?('hsl('+Math.round(360*D.words[i]/D.V)+',70%,60%)'):'rgba(120,140,170,.55)'; ctx.fill()}
  const k=Math.min(TICKS-0.001,lt), a=Math.floor(k), f=k-a; ctx.fillStyle='#1f9d8a';
  for(let w=0;w<rd.traj[0].length;w++){const p0=P(rd.traj[a][w]), p1=P(rd.traj[Math.min(TICKS,a+1)][w]); const x=p0[0]+(p1[0]-p0[0])*f, y=p0[1]+(p1[1]-p0[1])*f; ctx.beginPath(); ctx.arc(x,y,Math.max(2.5,W*0.0055),0,6.3); ctx.fill()}
  if(lt>TICKS-0.2){ rd.ids.forEach((id,j)=>{const p=P(id); ctx.strokeStyle=rd.labels[j]?'#ff6b6b':'#9aa5b1'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(p[0],p[1],W*0.012,0,6.3); ctx.stroke()}) }
@@ -400,6 +526,7 @@ function draw(){ctx.clearRect(0,0,W,H); const [r,lt]=stateAt(t); const rd=D.roun
  document.getElementById('vtxt').textContent='round '+(r+1)+' / '+R+'  ·  positives found: '+fnd+' / '+D.n_pos+' in the world';
 }
 document.getElementById('vplay').onclick=function(){playing=!playing; this.textContent=playing?'pause':'play'};
+const wb=document.getElementById('vwords'); if(wb){ if(!D.words){wb.style.display='none'} else {wb.onclick=function(){showWords=!showWords; this.textContent=showWords?'hide words':'show words'}} }
 requestAnimationFrame(frame);
 })();
 """
@@ -420,7 +547,7 @@ def build(out_dir, results, cfg):
         json.dump(view, open(os.path.join(out_dir, "viewer.json"), "w"))
     # ---- verdict tally
     tally = []
-    for k in ("syn_control", "syn_contagion", "syn_cascade", "syn_shifted", "real"):
+    for k in FAM_ORDER:
         f = results.get(k, {})
         v = (f.get("e2_verdict") or {}).get("org_vs_strongest")
         if v:
@@ -481,7 +608,8 @@ Wins: <b>{wins}</b> · ties: <b>{ties}</b> · losses: <b>{losses}</b> (of {len(t
 {genome_section(results)}
 <h2>7. The organism, live</h2>
 <p>One recorded run on a small synthetic world: teal dots are workers, orange glow is scent, red rings are confirmed positives, grey rings are checked negatives.</p>
-<canvas id="vcv" width="900" height="650"></canvas><p><button id="vplay">pause</button> <span id="vtxt" class="meta"></span></p>
+<canvas id="vcv" width="900" height="650"></canvas><p><button id="vplay">pause</button> <button id="vwords">show words</button> <span id="vtxt" class="meta"></span></p>
+{build_language_sections(results, out_dir)}
 {real_section(results)}
 {timing_section(results)}
 {diagnose_section(out_dir)}

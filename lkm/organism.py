@@ -16,35 +16,53 @@ from .baselines import fit_offset_logreg
 from . import nca as N
 from .graph import NSLOT
 
-HD, DD = 16, 10
-DC = DD + 3
-DIN = DD + 4
-SHAPES = [("Wxh", (HD, DIN)), ("Whh", (HD, HD)), ("bh", (HD,)), ("wi", (HD + 1,)), ("wd", (DD,)), ("Wm", (DC, HD + 1)),
-          ("wj", (HD + 1,)), ("misc", (4,))]            # misc: log-temperature, plasticity rate, trace decay, trust in the risk field
+HD, DD0 = 16, 10
+
+
+def dims(V=0):
+    """Descriptor sizes. V > 0: the worker also hears the word the cell field is 'saying' at its node (one-hot over V words)."""
+    dd = DD0 + V
+    return dd, dd + 3, dd + 4
+
+
+def shapes(V=0):
+    DD_, DC_, DIN_ = dims(V)
+    return [("Wxh", (HD, DIN_)), ("Whh", (HD, HD)), ("bh", (HD,)), ("wi", (HD + 1,)), ("wd", (DD_,)), ("Wm", (DC_, HD + 1)),
+            ("wj", (HD + 1,)), ("misc", (4,))]          # misc: log-temperature, plasticity rate, trace decay, trust in the risk field
+
+
+def p_total(V=0):
+    return int(sum(int(np.prod(s)) for _, s in shapes(V)))
+
+
+DD, DC, DIN = dims(0)
+SHAPES = shapes(0)
 SIZES = [int(np.prod(s)) for _, s in SHAPES]
-P_TOTAL = int(sum(SIZES))
+P_TOTAL = p_total(0)
 
 
-def unpack(G):
+def unpack(G, V=0):
     """G: (...,P) -> dict of arrays (...,*shape)."""
     out, o = {}, 0
-    for (name, shp), sz in zip(SHAPES, SIZES):
+    for name, shp in shapes(V):
+        sz = int(np.prod(shp))
         out[name] = G[..., o:o + sz].reshape(G.shape[:-1] + shp)
         o += sz
     return out
 
 
-def init_genome(seed=0):
+def init_genome(seed=0, V=0):
     r = np.random.default_rng(seed)
-    parts = {"Wxh": r.normal(0, 0.3, (HD, DIN)), "Whh": r.normal(0, 0.2, (HD, HD)), "bh": np.zeros(HD),
-             "wi": np.zeros(HD + 1), "wd": np.zeros(DD), "Wm": np.zeros((DC, HD + 1)), "wj": np.zeros(HD + 1),
+    DD_, DC_, DIN_ = dims(V)
+    parts = {"Wxh": r.normal(0, 0.3, (HD, DIN_)), "Whh": r.normal(0, 0.2, (HD, HD)), "bh": np.zeros(HD),
+             "wi": np.zeros(HD + 1), "wd": np.zeros(DD_), "Wm": np.zeros((DC_, HD + 1)), "wj": np.zeros(HD + 1),
              "misc": np.array([0.0, -2.0, 2.0, 1.0])}
     # instincts: seek high estimated risk, avoid verified nodes, mild preference for scent
     parts["wd"][[0, 1]] = [1.5, 1.5]; parts["wd"][[4, 5]] = [-8.0, -8.0]
     parts["Wm"][0, HD] = 1.5; parts["Wm"][1, HD] = 1.0; parts["Wm"][4, HD] = -5.0; parts["Wm"][5, HD] = -5.0
     parts["Wm"][2, HD] = 0.5
     parts["wj"][HD] = -2.0
-    return np.concatenate([parts[n].ravel() for n, _ in SHAPES]).astype(np.float64)
+    return np.concatenate([parts[n].ravel() for n, _ in shapes(V)]).astype(np.float64)
 
 
 def sigmoid(z):
@@ -62,8 +80,11 @@ class Organism:
 
     def __init__(self, theta, P=None, base=None, miss=None, use_cells=True, use_scent=True, plastic=True, evolve=True,
                  cell_adapt=True, adapt_l2=40.0, ticks=4, workers_per_slot=4, mut_sigma=0.03, replace_frac=0.15, jump_cands=24, field_beta=1.5, informed=True,
-                 r_hit=1.0, r_miss=-0.15, name=None, record=False, seed=0):
+                 r_hit=1.0, r_miss=-0.15, name=None, record=False, seed=0, vocab=0):
         self.theta = np.asarray(theta, np.float64)
+        self.V = int(vocab)
+        self.DD, self.DC, self.DIN = dims(self.V)
+        self.PT = p_total(self.V)
         self.P, self.base, self.miss = P, base, miss
         self.use_cells, self.use_scent, self.plastic, self.evolve_on, self.cell_adapt = use_cells, use_scent, plastic, evolve, cell_adapt
         self.adapt_l2 = adapt_l2
@@ -83,9 +104,9 @@ class Organism:
         self.Xn = np.nan_to_num(env.ds.X)
         self.tabs = N.tables(self.G) if (self.use_cells and self.P is not None) else None
         self.W = int(max(8, self.wps * int(env.B.max())))
-        self.genomes = self.theta[None, :] + self.rng.normal(0, 0.02, (self.W, P_TOTAL))
+        self.genomes = self.theta[None, :] + self.rng.normal(0, 0.02, (self.W, self.PT))
         self.pos = self.rng.integers(0, self.n, self.W)
-        self.h = np.zeros((self.W, HD)); self.Wf = np.zeros((self.W, HD, DIN)); self.energy = np.zeros(self.W)
+        self.h = np.zeros((self.W, HD)); self.Wf = np.zeros((self.W, HD, self.DIN)); self.energy = np.zeros(self.W)
         self.last_r = np.zeros(self.W)
         self.hit = np.zeros(self.n, np.float32); self.vis = np.zeros(self.n, np.float32)
         age = env.ds.X[:, env.ds.age_col]
@@ -115,7 +136,7 @@ class Organism:
     def _descriptors(self, env):
         z = self._cell_logit(env)
         zc = (np.clip(z, -6, 6) / 3.0).astype(np.float32)
-        d = np.zeros((self.n, DD), np.float32)
+        d = np.zeros((self.n, self.DD), np.float32)
         d[:, 0] = zc if self.use_cells else self.pb
         d[:, 1] = self.pb
         if self.use_scent:
@@ -125,6 +146,8 @@ class Organism:
         d[:, 8] = self.G.Aun @ d[:, 0]
         if self.use_scent:
             d[:, 9] = np.minimum(self.G.Aun @ self.hit * 3.0, 3.0)
+        if self.V and self._cache is not None and self.P is not None and "Wt" in self.P:
+            d[np.arange(self.n), DD0 + np.minimum(N.words(self.P, self._cache), self.V - 1)] = 1.0     # the word the cell field says here
         return d, z
 
     def _field_cdf(self, z, env):
@@ -190,7 +213,7 @@ class Organism:
 
     # ------------------------------------------------------------------ round
     def pick(self, env, B):
-        pr = unpack(self.genomes)
+        pr = unpack(self.genomes, self.V)
         d_all, z = self._descriptors(env)
         self._field_cdf(z, env)
         rf = env.round / max(env.rounds - 1, 1)
@@ -227,7 +250,7 @@ class Organism:
         r[self._sel] = np.where(labels == 1, self.r_hit, self.r_miss)
         self.last_r = r
         self.energy = 0.9 * self.energy + r
-        pr = unpack(self.genomes)
+        pr = unpack(self.genomes, self.V)
         if self.plastic:
             eta = np.log1p(np.exp(pr["misc"][:, 1]))[:, None, None] * 0.5
             lam = sigmoid(pr["misc"][:, 2])[:, None, None]
@@ -252,6 +275,7 @@ class Organism:
         self.log["energy"].append(float(self.energy.mean()))
         if self.record:
             self.rec.append({"traj": [t.tolist() for t in self._traj], "ids": ids.tolist(), "labels": labels.tolist(),
+                             "workers": self._sel.tolist(),
                              "hit": np.round(self.hit, 3).tolist() if self.n <= 1500 else []})
 
     def _adapt_cells(self, env):
@@ -271,7 +295,7 @@ class Organism:
         top = order[-max(k * 2, 2):]
         w = np.exp((self.energy[top] - self.energy[top].max()) * 3.0)
         parents = self.rng.choice(top, k, p=w / w.sum())
-        self.genomes[dead] = self.genomes[parents] + self.rng.normal(0, self.mut, (k, P_TOTAL))
+        self.genomes[dead] = self.genomes[parents] + self.rng.normal(0, self.mut, (k, self.PT))
         near = self.rng.random(k) < 0.5
         self.pos[dead] = np.where(near, self.pos[parents], self.rng.integers(0, self.n, k))
         self.h[dead] = 0; self.Wf[dead] = 0; self.energy[dead] = self.energy.mean(); self.last_r[dead] = 0

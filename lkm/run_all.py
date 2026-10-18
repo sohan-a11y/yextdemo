@@ -7,9 +7,9 @@ Outputs go to ./lkm_out (report.html, results.json, logs, cache). Every stage is
 import os, sys, json, time, platform, traceback, argparse, io, unittest
 import numpy as np
 from . import pipeline as PL
-from .pipeline import CFG_FULL, CFG_SMOKE, log0
+from .pipeline import CFG_FULL, CFG_SMOKE, CFG_FINAL, log0
 from .worlds import make_bundle
-from .organism import unpack, HD, DD
+from .organism import unpack, HD, DD, p_total
 
 
 def jsonable(o):
@@ -37,9 +37,10 @@ def run_tests(log=log0):
 def life_summary(M):
     out = {}
     for v, th in M.thetas.items():
-        pr = unpack(th[None, :])
+        V = next((x for x in (0, getattr(M, "vocab", 0)) if p_total(x) == len(th)), 0)
+        pr = unpack(th[None, :], V)
         wm = pr["Wm"][0]
-        out[v] = {"instinct_wd": np.round(pr["wd"][0], 2).tolist(),
+        out[v] = {"instinct_wd": np.round(pr["wd"][0], 2).tolist(), "word_preference": np.round(pr["wd"][0][DD:], 2).tolist(),
                   "move_bias": {n: round(float(wm[i, HD]), 2) for i, n in enumerate(
                       ["cell_risk", "base_risk", "scent_hit", "scent_visited", "verified_pos", "verified_neg", "age", "degree", "nbr_risk", "nbr_scent", "rel_sp", "rel_br", "rel_ad"])},
                   "jump_bias": round(float(pr["wj"][0][HD]), 2), "log_temp": round(float(pr["misc"][0][0]), 2),
@@ -61,16 +62,19 @@ def life_stats(res):
     return out
 
 
-def family_synthetic(kind, cfg, cache, log, rho=0.5, base_rate=0.10):
-    tag = f"syn-{kind}"
+def family_synthetic(kind, cfg, cache, log, rho=0.5, base_rate=0.10, lang=False, tag=None):
+    tag = tag or f"syn-{kind}"
     n = cfg["world_n"]
-    train = make_bundle(kind, range(100, 100 + cfg["n_train"]), n=n, rho=rho, base_rate=base_rate)
-    val = make_bundle(kind, range(500, 500 + cfg["n_val"]), n=n, rho=rho, base_rate=base_rate)
-    test = make_bundle(kind, range(1900, 1900 + cfg["n_test"]), n=n, rho=rho, base_rate=base_rate)
+    train = make_bundle(kind, range(100, 100 + cfg["n_train"]), n=n, rho=rho, base_rate=base_rate, lang=lang)
+    val = make_bundle(kind, range(500, 500 + cfg["n_val"]), n=n, rho=rho, base_rate=base_rate, lang=lang)
+    test = make_bundle(kind, range(1900, 1900 + cfg["n_test"]), n=n, rho=rho, base_rate=base_rate, lang=lang)
     k = max(1, cfg["n_val"] // 2)
     es_sets, tune_sets = val[:k], val[k:]
     variants = ("full",) if kind == "control" else ("full", "no_scent", "no_plastic", "workers_only", "blind")
-    M = PL.fit_models(tag, train, es_sets, cache, cfg, cfg["nca_steps"], variants=variants, log=log, val_for_nca=tune_sets[0])
+    if cfg.get("vocab") and kind != "control":
+        variants = variants + ("no_words",)
+    M = PL.fit_models(tag, train, es_sets, cache, cfg, cfg["nca_steps"], variants=variants, log=log, val_for_nca=tune_sets[0],
+                      vocab=cfg.get("vocab", 0), comm=cfg.get("comm", "cont"))
     pick, tune_scores = PL.tune(tune_sets, M, cfg, n_proc=1, log=log)
     return dict(kind=kind, rho=rho, train=train, val=val, test=test, M=M, pick=pick, tune_scores=tune_scores, tune_sets=tune_sets)
 
@@ -106,8 +110,18 @@ def main():
     ap.add_argument("--smoke", action="store_true"); ap.add_argument("--out", default="lkm_out")
     ap.add_argument("--only", default="", help="comma list: syn,real,tests")
     ap.add_argument("--no-real", action="store_true")
+    ap.add_argument("--final", action="store_true", help="final build: organisms with language (words, text reading)")
+    ap.add_argument("--comm", default="", help="override the communication mode chosen by the language study")
     a = ap.parse_args()
     cfg = CFG_SMOKE if a.smoke else CFG_FULL
+    if a.final:
+        cfg = dict(cfg, vocab=CFG_FINAL["vocab"], comm=CFG_FINAL["comm"], lang_real=True, lang_edges=True)
+        ls = os.path.join(a.out, "langstudy.json")
+        if os.path.exists(ls):
+            dec = json.load(open(ls)).get("decision", {})
+            cfg["comm"] = dec.get("comm", cfg["comm"]); cfg["lang_edges"] = dec.get("dataset", "R2") == "R2"
+        if a.comm:
+            cfg["comm"] = a.comm
     out = a.out + ("_smoke" if a.smoke else "")
     cache = os.path.join(out, "cache"); os.makedirs(cache, exist_ok=True)
     logf = open(os.path.join(out, "run.log"), "a")
@@ -135,12 +149,15 @@ def main():
         save()
     fams = {}
     if "syn" in only:
-        for kind, rho, br in (("control", 0.5, 0.10), ("contagion", 0.5, 0.10), ("cascade", 0.2, 0.08)):
-            key = f"syn_{kind}"
+        fam_list = [("control", 0.5, 0.10, False, None), ("contagion", 0.5, 0.10, False, None), ("cascade", 0.2, 0.08, False, None)]
+        if a.final:
+            fam_list += [("lexical", 0.3, 0.10, False, "lexical_nolang"), ("lexical", 0.3, 0.10, True, "lexical_lang")]
+        for kind, rho, br, lang, alias in fam_list:
+            key = f"syn_{alias or kind}"
             if key in results and "e2" in results[key]:
                 log(f"[skip] {key} cached"); continue
             try:
-                fam = family_synthetic(kind, cfg, cache, log, rho=rho, base_rate=br)
+                fam = family_synthetic(kind, cfg, cache, log, rho=rho, base_rate=br, lang=lang, tag=("syn-" + alias) if alias else None)
                 res, _ = evaluate_family(fam, cfg, log)
                 results[key] = res; fams[kind] = fam
                 if kind == "contagion":
@@ -175,7 +192,8 @@ def rho_sweep(cfg, cache, log):
         n = cfg["world_n"]
         train = make_bundle("contagion", range(100, 100 + cfg["n_train"]), n=n, rho=rho)
         test = make_bundle("contagion", range(1900, 1900 + cfg["n_test"]), n=n, rho=rho)
-        M = PL.fit_models(f"syn-contagion-rho{rho}", train, train[:1], cache, cfg, cfg["nca_steps"], variants=(), log=log, val_for_nca=train[0])
+        M = PL.fit_models(f"syn-contagion-rho{rho}", train, train[:1], cache, cfg, cfg["nca_steps"], variants=(), log=log, val_for_nca=train[0],
+                          vocab=cfg.get("vocab", 0), comm=cfg.get("comm", "cont"))
         out[str(rho)] = PL.exp_e1(test, M, cfg)
     return out
 
@@ -198,14 +216,16 @@ def shifted(fam, cfg, log):
 
 def real_study(cfg, cache, log, smoke, results):
     from .realdata import build_real
-    R = build_real(log=log)
+    R = build_real(log=log, language=bool(cfg.get("lang_real")), lang_edges=bool(cfg.get("lang_edges", True)))
     train, vch, pools = R["train"], R["val_chunks"], R["test_pools"]
     es_ix = [i for i, d in enumerate(vch) if d.n <= 13000]
     tune_ix = [i for i in range(len(vch)) if i not in es_ix and vch[i].n <= 34000]
     if smoke:
         train, es_ix, tune_ix, pools = train[:4], es_ix[:2], tune_ix[:1], pools[:1]
     es_sets = [vch[i] for i in es_ix]; tune_sets = [vch[i] for i in tune_ix] or es_sets[:1]
-    M = PL.fit_models("real", train, es_sets, cache, cfg, cfg["real_nca_steps"], log=log, val_for_nca=es_sets[0])
+    variants = ("full", "no_scent", "no_plastic", "workers_only", "blind") + (("no_words",) if cfg.get("vocab") else ())
+    M = PL.fit_models("real", train, es_sets, cache, cfg, cfg["real_nca_steps"], variants=variants, log=log, val_for_nca=es_sets[0],
+                      vocab=cfg.get("vocab", 0), comm=cfg.get("comm", "cont"))
     pick, tune_scores = PL.tune(tune_sets, M, cfg, n_proc=cfg["es_proc"], log=log)
     cfg_r = dict(cfg)
     out = {"info": R["info"], "diag": R["diag"], "pick": {k: PL.spec_name(v) for k, v in pick.items()},
@@ -230,7 +250,7 @@ def real_study(cfg, cache, log, smoke, results):
     # E6 sim-to-real: genome evolved on synthetic contagion worlds, deployed on the real mesh without retraining
     syn = results.get("syn_contagion")
     cpath = os.path.join(cache, "models_syn-contagion.pkl")
-    if os.path.exists(cpath):
+    if os.path.exists(cpath) and not cfg.get("vocab"):      # words are learned per world, so a genome cannot transfer them
         import pickle
         Ms = pickle.load(open(cpath, "rb"))
         spec = dict(pick["org"], theta="full")
@@ -239,6 +259,39 @@ def real_study(cfg, cache, log, smoke, results):
         sm = PL.summarize_play(tr)[nm]
         full_nm = [k for k in out["e2"] if PL.is_primary_org(k)]
         out["e6_transfer"] = {"transfer": sm, "native": out["e2"][full_nm[0]] if full_nm else None}
+    if cfg.get("vocab"):
+        try:
+            out["speech"] = speech_section(M, R, pools, pick, cfg, log)
+        except Exception:
+            out["speech"] = {"error": traceback.format_exc()}; log(out["speech"]["error"])
+    return out
+
+
+def speech_section(M, R, pools, pick, cfg, log):
+    """What the organism says: the cells' dictionary (labelled VALIDATION data, no test labels) and sentences from one
+    recorded game on the first test pool (only labels the workers themselves revealed by verifying)."""
+    from .narrate import Narrator
+    from .game import run_game
+    from .baselines import sigmoid
+    out = {}
+    vch = R["val_chunks"]
+    vd = max([d for d in vch if d.n <= 34000], key=lambda d: d.n)
+    nar_v = Narrator(vd, M.graph.score(vd), M.P)
+    dic = nar_v.dictionary()
+    for e in dic:
+        e["sentence"] = nar_v.say_word(e["word"], e)
+    out["dictionary"] = dic
+    pool = pools[0]
+    base = M.graph.score(pool)
+    pol = PL.build_policy(dict(pick["org"], theta="full"), pool, base, M, seed=0, record=True)
+    run_game(pool, pol, cfg["budget_frac"], cfg["rounds"], 0)
+    nar = Narrator(pool, base, M.P)
+    z = np.asarray(pol._z)
+    out["worker_log"] = nar.worker_log(pol.rec, None, risk_fn=lambda i: float(sigmoid(z[i])), limit=16)
+    unver = np.argsort(-z)[:5]
+    out["explanations"] = [nar.explain(int(i), risk=float(sigmoid(z[i]))) for i in unver]
+    out["pool_words"] = np.bincount(nar.words, minlength=nar.V).tolist() if nar.words is not None else []
+    log(f"[speech] {len(out['worker_log'])} worker sentences, {sum(1 for e in dic if e['n'])} words in use")
     return out
 
 
