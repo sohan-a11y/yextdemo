@@ -49,6 +49,13 @@ Total saving = analyst time saved + AI compute avoided versus a brute-force "re-
 4. *Value:* "Here is the back-of-envelope with every assumption visible. Tell me which numbers are wrong and I will change them live."
 5. *Status:* "This is a prototype on synthetic data. The ask is a read-only pilot on one customer."
 
+## Living Knowledge Mesh organism study (`lkm/`)
+
+A research harness for the artificial-life idea: workers with neural-cellular-automaton brains living on a knowledge graph, evaluated against strong
+conventional baselines on synthetic worlds and on real Overture Maps data. `python -m lkm.run_all` reproduces everything; the report is
+`lkm_out/report.html`. Short version: the NCA cell field helps where events cluster or the world shifts; on real data it ties the best baseline on the
+verification game and slightly improves forecasting; the 'living' extras (scent, plasticity, evolution) showed no measurable benefit. Details in `lkm/README.md`.
+
 ## What the prototype demonstrates
 
 - An interactive Three.js 3D network view for synthetic entities, sources and review signals.

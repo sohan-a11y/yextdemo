@@ -1,0 +1,7 @@
+
+# lkm study artifacts that are large or regenerable
+lkm_data/
+lkm_out/cache/
+lkm_out_smoke/
+__pycache__/
+*.pyc
