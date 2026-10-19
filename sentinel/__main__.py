@@ -115,7 +115,8 @@ def cmd_grow(a):
     t_make = time.perf_counter() - t1
     print(f"neuron '{a.name}' made in {1000 * t_make:.0f} ms ({n.n_params} numbers; loading the language model took {t_load:.1f} s, once per run)")
     if n.thr is None:
-        print(f"only {len(V)} events in memory so far: the alarm line will be set automatically once the Sentinel has read 1000 events")
+        print(f"only {len(V)} events in memory so far: the running Sentinel sets the alarm line itself once it has read enough events "
+              f"(setting cortex.min_calibration, default 1000); until then this neuron stays silent")
     else:
         est = f", about {alpha * per_day:.1f} alerts per day on your normal activity" if per_day else ""
         print(f"alarm line {n.thr:.3f}: fires on {100 * alpha:.2f}% of the {len(V)} recent events it was checked against{est}")

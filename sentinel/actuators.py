@@ -12,6 +12,8 @@ def propose(alert):
     """alert -> (kind, target, suggestion) or None."""
     if alert["severity"] not in ("medium", "high"):
         return None
+    if str(alert.get("source", "")).startswith("concept:") and alert["severity"] != "high":
+        return None                       # a neuron you grew says "this looks like what you asked about", not "stop it"
     t = alert.get("target") or {}
     kind = t.get("kind")
     if kind == "connection" and isinstance(t.get("ip"), str) and IP4.match(t["ip"]) and all(0 <= int(x) <= 255 for x in t["ip"].split(".")):

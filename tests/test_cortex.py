@@ -183,7 +183,7 @@ class TestCortexInTheLivingSentinel(unittest.TestCase):
         a = s.store.alert(hits[0]["id"])
         self.assertEqual(a["target"]["concept_id"], cid)
         self.assertIn("vec_id", a["target"])
-        self.assertEqual(s.store.requests()[0]["target"], {"pid": 4242})        # it can only ask a person
+        self.assertEqual(s.store.requests(), [])                               # a grown neuron at medium severity asks for nothing
         # 'it was fine' -> one-shot counter-example; the same thing does not fire again (beyond the cool-down)
         s.feedback(a["id"], "benign")
         data = s.store.concepts()[0]["data"]
@@ -285,3 +285,12 @@ class TestRealCortex(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestGrownNeuronRequests(unittest.TestCase):
+    def test_only_high_severity_grown_neurons_ask_for_action(self):
+        from sentinel import actuators
+        a = {"severity": "medium", "source": "concept:x", "title": "t", "target": {"kind": "process", "pid": 1234}}
+        self.assertIsNone(actuators.propose(a))
+        self.assertEqual(actuators.propose(dict(a, severity="high"))[0], "end_process")
+        self.assertEqual(actuators.propose(dict(a, source="instinct"))[0], "end_process")
