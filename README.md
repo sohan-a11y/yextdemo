@@ -104,3 +104,7 @@ Created by Sohan Merugu as an independent concept prototype. Not affiliated with
 ## Running the organism as a living service (`lkm/live/`)
 
 The organism can live in a machine: it starts at boot, keeps its memory in a crash-safe database, watches a data source, proposes what to check next, learns from the answers that come back, and shows a phone-friendly dashboard. See `lkm/live/LIVE.md`; deployment files are in `deploy/` (Docker, systemd). `python -m lkm.live selftest` proves it survives being killed.
+
+## The Sentinel and the Neuron Forge (`sentinel/`)
+
+An organism that lives on a real machine (written for Windows, tested on Linux) and watches its processes, connections, files, router and Wi-Fi. It is **read-only and alert-only**: the only things it can do are `alert`, `report` and `request_action` (a sentence for a human), enforced in code and by a static scan in the tests, not by its neurons. The **Neuron Forge** (`python -m sentinel.forge`) turns a purpose written in plain words into a new neuron: a language model designs a validated spec, the Forge builds synthetic threats on the machine's own normal history, trains a 16-unit network, tests it (false alarms on untouched later windows, recall, a scenario left out), and a person approves it. See `sentinel/SENTINEL.md` for design, safety limits, Windows install (untested on Windows) and measured results.
