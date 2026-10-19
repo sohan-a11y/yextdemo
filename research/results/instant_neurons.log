@@ -1,0 +1,24 @@
+[data] tldr: 31930 distinct commands from 7222 tools
+[concepts] archive: 122 positives over 19 tools, 31087 negatives
+[concepts] packages: 1006 positives over 22 tools, 28844 negatives
+[concepts] netinfo: 263 positives over 18 tools, 29726 negatives
+[concepts] containers: 665 positives over 6 tools, 29191 negatives
+[concepts] vcs: 893 positives over 4 tools, 29491 negatives
+[concepts] users: 78 positives over 14 tools, 30384 negatives
+[concepts] procs: 94 positives over 13 tools, 30913 negatives
+[concepts] disks: 104 positives over 15 tools, 30293 negatives
+[concepts] transfer: 87 positives over 10 tools, 30107 negatives
+[concepts] schedule: 22 positives over 5 tools, 31020 negatives
+[concepts] services: 291 positives over 7 tools, 30133 negatives
+[concepts] search: 60 positives over 9 tools, 30806 negatives
+[concepts] remote: 50 positives over 5 tools, 29614 negatives
+[concepts] crypto: 143 positives over 11 tools, 30358 negatives
+[concepts] media: 92 positives over 10 tools, 29661 negatives
+[concepts] databases: 43 positives over 9 tools, 30801 negatives
+[concepts] firewall: 85 positives over 6 tools, 31790 negatives
+[concepts] logs: 41 positives over 6 tools, 30553 negatives
+[concepts] editors: 54 positives over 8 tools, 31363 negatives
+[concepts] python: 269 positives over 8 tools, 31186 negatives
+[concepts] 2665 evaluations in 350s
+[feedback] ...
+[growth] ...
