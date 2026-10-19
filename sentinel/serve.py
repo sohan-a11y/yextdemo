@@ -59,9 +59,20 @@ def render(s, token=None):
         for r in rq:
             out.append(f"<div class='a'><span class='tag'>{e(r['kind'])}</span><br>{e(r['suggestion'])}"
                        f"<form method='post' action='/request_done{tq}'><input type='hidden' name='id' value='{r['id']}'><button>Done / dismiss</button></form></div>")
-    out.append("<h2>Neurons</h2>")
-    out.append("<ul>" + "".join(f"<li>{e(n['name'])} v{n['version']} <span class='tag'>{e(n['state'])}</span></li>" for n in st["neurons"]) + "</ul>"
-               if st["neurons"] else "<p class='m'>none forged yet (python -m sentinel.forge create ...)</p>")
+    b = st.get("brain") or {}
+    if b:
+        mem_note = f"{b['memory_childhood_left']} events of childhood left" if b["memory_childhood_left"] else f"{b['memory_events_seen']} events seen"
+        brain_cards = [("inherited language knowledge", f"{b['cortex_inherited_params'] / 1e6:.1f}M" if b["cortex_inherited_params"] else "off"),
+                       ("memory neurons grown", f"{b['memory_prototypes']}"), ("neurons you grew", b["concept_neurons"]),
+                       ("answers they learned from", b["concept_feedback_answers"]), ("reflex", b["reflex_phase"]), ("rules", b["rules"])]
+        out.append("<h2>Brain</h2><div class='grid'>" + "".join(f"<div class='k'><b>{e(str(v))}</b><span>{e(k)}</span></div>" for k, v in brain_cards) + "</div>")
+        out.append(f"<p class='m'>memory: {e(mem_note)} · cortex: {e(b['cortex'])}</p>")
+    out.append("<h2>Neurons you grew</h2>")
+    cs = st.get("concepts") or []
+    out.append("<ul>" + "".join(f"<li>{e(c['name'])} <span class='tag'>{e(c['state'])}</span> <span class='m'>{e(c['description'])}</span></li>" for c in cs) + "</ul>"
+               if cs else "<p class='m'>none yet: python -m sentinel grow --name NAME \"what to watch for\"</p>")
+    if st["neurons"]:
+        out.append("<h2>Forged neurons</h2><ul>" + "".join(f"<li>{e(n['name'])} v{n['version']} <span class='tag'>{e(n['state'])}</span></li>" for n in st["neurons"]) + "</ul>")
     out.append("<h2>Senses</h2><ul>" + "".join(
         f"<li>{e(x['name'])}: {'ok' if x['available'] and not x.get('error') else 'NOT working'}"
         + (f" <span class='m'>{e(x.get('reason') or x.get('error') or '')}</span>" if (x.get('reason') or x.get('error')) else "") + "</li>" for x in st["sensors"]) + "</ul>")

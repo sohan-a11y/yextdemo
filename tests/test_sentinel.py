@@ -72,7 +72,7 @@ def proc_ev(**kw):
 
 def make_service(home, sensors=None, clock=None, cfg=None):
     T = clock or [1.8e9]
-    c = {"window_s": 30, "poll_s": 5, "port": 0, "reflex": {"fm_windows": 5, "ad_windows": 5, "cal_windows": 5}}
+    c = {"window_s": 30, "poll_s": 5, "port": 0, "reflex": {"fm_windows": 5, "ad_windows": 5, "cal_windows": 5}, "cortex": {"enabled": False}}
     c.update(cfg or {})
     return Sentinel(home, sensors if sensors is not None else [Fake()], c, clock=lambda: T[0], log=lambda *a: None).boot(), T
 
@@ -755,7 +755,7 @@ class TestBrainWithNeurons(unittest.TestCase):
             FM.approve(st, nid, "")                                           # a name is required
         # not live until a person approves
         T = [1.8e9]
-        s = Sentinel(d, [Fake()], {"window_s": 30, "port": 0, "reflex": {"fm_windows": 5, "ad_windows": 5, "cal_windows": 5}}, clock=lambda: T[0], log=lambda *a: None).boot()
+        s = Sentinel(d, [Fake()], {"window_s": 30, "port": 0, "reflex": {"fm_windows": 5, "ad_windows": 5, "cal_windows": 5}, "cortex": {"enabled": False}}, clock=lambda: T[0], log=lambda *a: None).boot()
         raw = dict(self.base[10]); raw.update(n_file_events=250, n_file_renamed=120, n_ext_change=120, n_entropy_anomaly=15)
         vec = F.to_vector(raw)
         self.assertEqual(s.brain.neurons, [])

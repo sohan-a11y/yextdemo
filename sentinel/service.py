@@ -51,7 +51,7 @@ def acquire_lock(path):
 
 
 class Sentinel:
-    def __init__(self, home, sensors, cfg=None, clock=time.time, sleep=time.sleep, log=print):
+    def __init__(self, home, sensors, cfg=None, clock=time.time, sleep=time.sleep, log=print, cortex=None):
         self.home = os.path.abspath(home)
         c = json.loads(json.dumps(DEFAULTS))
         for k, v in (cfg or {}).items():
@@ -64,6 +64,7 @@ class Sentinel:
         self.pending = []
         self.sensor_errors = {}
         self.cycle = 0
+        self._cortex = cortex
 
     def log(self, msg):
         """Print it, and keep it in the database too (a background Windows task has no console to print to)."""
@@ -80,7 +81,7 @@ class Sentinel:
         if self._lock is None:
             raise RuntimeError(f"another Sentinel is already running in {self.home}")
         self.store = SentinelStore(self.home)
-        self.brain = Brain(self.store, self.cfg, self.log, self.clock)
+        self.brain = Brain(self.store, self.cfg, self.log, self.clock, cortex=self._cortex)
         self.builder = WindowBuilder()
         st = self.store.meta_get("sensor_state", {})
         for s in self.sensors:
@@ -158,7 +159,11 @@ class Sentinel:
         self.cycle += 1
         with self.store.tx():
             wid = self.store.add_window(now, raw, score, flagged)
+            vec_ids = self.store.add_event_vectors(now, self.brain.window_vectors) if self.brain.window_vectors else []
             for a in admitted:
+                if "_vec_index" in a and a["_vec_index"] < len(vec_ids):
+                    a.setdefault("target", {})["vec_id"] = vec_ids[a["_vec_index"]]
+                    a["target"]["concept_id"] = a.get("concept_id")
                 a["id"] = self.store.add_alert(a, now, wid)
                 prop = actuators.propose(a)
                 if prop:
@@ -185,7 +190,13 @@ class Sentinel:
                 return "unknown alert"
             w = self.store.window(a["window_id"]) if a["window_id"] else None
             vec = to_vector(w["raw"]) if w else None
-            if verdict == "benign":
+            if a["source"].startswith("concept:") and a["target"].get("vec_id"):
+                ev_vec = self.store.vector(a["target"]["vec_id"])
+                if ev_vec is not None:
+                    self.brain.concept_feedback(a["target"].get("concept_id"), ev_vec, verdict == "real")
+                if w:
+                    self.store.set_window_label(w["id"], "real" if verdict == "real" else "benign")
+            elif verdict == "benign":
                 self.brain.learn_benign(a["key"], vec if a["source"] in ("reflex",) or a["source"].startswith("neuron:") else None)
                 if w:
                     self.store.set_window_label(w["id"], "benign")
@@ -209,6 +220,8 @@ class Sentinel:
                     "alerts": counts, "judged": {"real": real, "benign": benign, "precision": (real / (real + benign)) if real + benign else None},
                     "dropped_by_cap": self.brain.dropped, "open_requests": len(self.store.requests("open")),
                     "neurons": [{"name": n["name"], "version": n["version"], "state": n["state"]} for n in self.store.neurons()],
+                    "concepts": [{"id": c["id"], "name": c["name"], "description": c["description"], "state": c["state"]} for c in self.store.concepts()],
+                    "brain": self.brain.brain_map(),
                     "paused": self.paused_by(), "can_do": list(ALLOWED_ACTIONS), "cannot_see": CANNOT_SEE}
 
     # ------------------------------------------------------------------ run

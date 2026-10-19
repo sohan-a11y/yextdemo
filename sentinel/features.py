@@ -7,7 +7,7 @@ FEATURES = [
     "n_conn_new", "n_conn_novel", "n_remote_ips", "n_rare_port", "n_public_conn", "n_listen_new", "n_listen_public",
     "n_file_events", "n_file_created", "n_exec_created", "n_startup_touch", "n_file_renamed", "n_ext_change",
     "dns_queries", "dns_nx", "dns_entropy", "net_bytes_out", "net_bytes_in", "net_pkts",
-    "n_lan_new", "gw_changed", "arp_dup", "wifi_weak", "wifi_ap_changed", "n_entropy_anomaly",
+    "n_lan_new", "gw_changed", "arp_dup", "wifi_weak", "wifi_ap_changed", "n_entropy_anomaly", "n_novel_events",
 ]
 DESCRIPTIONS = {
     "n_proc_new": "new processes started", "n_proc_user_dir": "new processes whose program sits in a user, temp, downloads or appdata folder",
@@ -22,6 +22,7 @@ DESCRIPTIONS = {
     "net_bytes_out": "bytes sent", "net_bytes_in": "bytes received", "net_pkts": "packets",
     "n_lan_new": "devices newly seen on the local network", "gw_changed": "the router's hardware address changed",
     "n_entropy_anomaly": "text-like files whose content suddenly looks random (encrypted)",
+    "n_novel_events": "events unlike anything this machine has done before (judged by the cortex)",
     "arp_dup": "one hardware address claiming several network addresses (a spoofing sign)",
     "wifi_weak": "the Wi-Fi network uses open, WEP or outdated security", "wifi_ap_changed": "the access point behind the same Wi-Fi name changed",
 }

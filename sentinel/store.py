@@ -19,6 +19,11 @@ CREATE TABLE IF NOT EXISTS requests (id INTEGER PRIMARY KEY AUTOINCREMENT, ts RE
 CREATE TABLE IF NOT EXISTS neurons (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, version INTEGER, state TEXT, purpose TEXT, spec TEXT, weights BLOB,
   metrics TEXT, created REAL, decided_by TEXT, decided REAL, teacher TEXT, baseline TEXT);
 CREATE INDEX IF NOT EXISTS n_state ON neurons(state);
+CREATE TABLE IF NOT EXISTS event_vectors (id INTEGER PRIMARY KEY AUTOINCREMENT, ts REAL, kind TEXT, sentence TEXT, vec BLOB);
+CREATE INDEX IF NOT EXISTS ev_ts ON event_vectors(ts);
+CREATE TABLE IF NOT EXISTS concepts (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, description TEXT, state TEXT, data TEXT, severity TEXT,
+  created REAL, decided_by TEXT, decided REAL, stats TEXT);
+CREATE TABLE IF NOT EXISTS blobs (key TEXT PRIMARY KEY, ts REAL, blob BLOB);
 """
 
 
@@ -133,6 +138,69 @@ class SentinelStore(Store):
             r = self.db.execute("SELECT COUNT(*), COALESCE(MAX(decided),0), COALESCE(SUM(CASE WHEN state='active' THEN id END),0) FROM neurons").fetchone()
         return tuple(r)
 
+    # ------------------------------------------------------------------ what the cortex read (meaning vectors of recent events)
+    def add_event_vectors(self, ts, items):
+        """items: [(kind, sentence, vector)] -> ids"""
+        import numpy as np
+        ids = []
+        with self.lock:
+            for kind, sent, v in items:
+                cur = self.db.execute("INSERT INTO event_vectors(ts,kind,sentence,vec) VALUES(?,?,?,?)", (ts, kind, sent[:400], np.asarray(v, np.float16).tobytes()))
+                ids.append(cur.lastrowid)
+        return ids
+
+    def recent_vectors(self, n=20000):
+        import numpy as np
+        with self.lock:
+            rows = self.db.execute("SELECT id,ts,kind,sentence,vec FROM event_vectors ORDER BY id DESC LIMIT ?", (n,)).fetchall()
+        if not rows:
+            return [], np.zeros((0, 384), np.float32), [], []
+        V = np.array([np.frombuffer(r[4], np.float16) for r in rows], np.float32)
+        return [r[0] for r in rows], V, [r[3] for r in rows], [r[1] for r in rows]
+
+    def vector(self, vid):
+        import numpy as np
+        with self.lock:
+            r = self.db.execute("SELECT vec FROM event_vectors WHERE id=?", (vid,)).fetchone()
+        return None if r is None else np.frombuffer(r[0], np.float16).astype(np.float32)
+
+    # ------------------------------------------------------------------ concept neurons (made from words in milliseconds)
+    def add_concept(self, name, description, data, severity, by, ts=None, stats=None):
+        ts = ts or time.time()
+        with self.lock:
+            cur = self.db.execute("INSERT INTO concepts(name,description,state,data,severity,created,decided_by,decided,stats) VALUES(?,?,?,?,?,?,?,?,?)",
+                                  (name, description, "active", json.dumps(data), severity, ts, by, ts, json.dumps(stats or {})))
+            return cur.lastrowid
+
+    def concepts(self, state=None):
+        q = "SELECT id,name,description,state,data,severity,created,decided_by,decided,stats FROM concepts"
+        with self.lock:
+            rows = self.db.execute(q + (" WHERE state=?" if state else "") + " ORDER BY id", ((state,) if state else ())).fetchall()
+        return [{"id": r[0], "name": r[1], "description": r[2], "state": r[3], "data": json.loads(r[4]), "severity": r[5], "created": r[6],
+                 "decided_by": r[7], "decided": r[8], "stats": json.loads(r[9] or "{}")} for r in rows]
+
+    def update_concept(self, cid, data):
+        with self.lock:
+            self.db.execute("UPDATE concepts SET data=? WHERE id=?", (json.dumps(data), cid))
+
+    def set_concept_state(self, cid, state, by, ts=None):
+        with self.lock:
+            self.db.execute("UPDATE concepts SET state=?, decided_by=?, decided=? WHERE id=?", (state, by, ts or time.time(), cid))
+
+    def concept_stamp(self):
+        with self.lock:
+            return tuple(self.db.execute("SELECT COUNT(*), COALESCE(MAX(decided),0), COALESCE(SUM(CASE WHEN state='active' THEN id END),0) FROM concepts").fetchone())
+
+    # ------------------------------------------------------------------ named blobs (the growing memory)
+    def put_blob(self, key, blob, ts=None):
+        with self.lock:
+            self.db.execute("INSERT INTO blobs(key,ts,blob) VALUES(?,?,?) ON CONFLICT(key) DO UPDATE SET ts=excluded.ts, blob=excluded.blob", (key, ts or time.time(), blob))
+
+    def get_blob(self, key):
+        with self.lock:
+            r = self.db.execute("SELECT blob FROM blobs WHERE key=?", (key,)).fetchone()
+        return None if r is None else r[0]
+
     # ------------------------------------------------------------------ housekeeping inside our own database only
     def prune(self, now, days):
         cut = now - days * 86400
@@ -140,3 +208,4 @@ class SentinelStore(Store):
             db.execute("DELETE FROM windows WHERE ts<? AND flagged=0", (cut,))
             db.execute("DELETE FROM alerts WHERE ts<? AND status!='open'", (cut,))
             db.execute("DELETE FROM events WHERE ts<?", (cut,))
+            db.execute("DELETE FROM event_vectors WHERE id <= (SELECT COALESCE(MAX(id),0) FROM event_vectors) - 50000")

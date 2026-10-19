@@ -26,6 +26,7 @@ New-Item -ItemType Directory -Force -Path $DataDir | Out-Null
 $Venv = "$DataDir\venv"
 if (-not (Test-Path "$Venv\Scripts\python.exe")) { & $Python -m venv $Venv }
 & "$Venv\Scripts\python.exe" -m pip install --quiet -r "$Repo\deploy\requirements-sentinel.txt"
+& "$Venv\Scripts\python.exe" -m sentinel fetch-model      # the language model the cortex borrows (about 90 MB, once)
 $Home_ = "$DataDir\home"
 & "$Venv\Scripts\python.exe" -m sentinel init --home $Home_ --port $Port
 $Exe = "$Venv\Scripts\pythonw.exe"                       # pythonw: no console window

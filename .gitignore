@@ -11,3 +11,6 @@ lkm_out_final_wordsonly/cache/
 lkm_out_final_smoke/
 
 organism_selftest/
+
+# research downloads and caches (re-created by research/instant_neurons.py and the fetch steps in research/README)
+research_data/

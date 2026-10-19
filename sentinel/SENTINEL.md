@@ -17,13 +17,14 @@ Version 1 is deliberately small: network, file and process watching. Screen read
  connections ─┤   │ reflex     learns what NORMAL is on this PC │→ alert  → dashboard
  files       ─┼─► │ forged     neurons the Forge made, approved │→ report   (phone friendly)
  router/WiFi ─┤   │            by a human                       │→ request (text for YOU to act on)
- traffic/DNS ─┘   └ one window of 31 numbers every 30 seconds   ┘   nothing else exists
+ traffic/DNS ─┘   └ one window of 32 numbers every 30 seconds   ┘   nothing else exists
 ```
 
-* **Senses** turn the operating system into small events. 31 numbers per 30-second window (new processes from user folders, obfuscated command lines, new destinations, files renamed, text files that suddenly look random, router address changed, ...).
+* **Senses** turn the operating system into small events. 32 numbers per 30-second window (new processes from user folders, obfuscated command lines, new destinations, files renamed, text files that suddenly look random, router address changed, ...).
 * **Instincts** are rules for known bad habits (an Office program starting PowerShell, a freshly downloaded program going online, files being renamed in bulk, the router's hardware address changing). They work from the first minute.
 * **Reflex** is a small online autoencoder ensemble (KitNET style). It spends a childhood learning your normal (about 5 hours at the defaults) and then flags windows that are far from it. It learns only from windows it judged normal, so an attacker cannot teach it that the attack is normal in one go; **you** can teach it with "It was fine".
 * **Forged neurons** are the Forge's output (section 4). They only count once you approve them.
+* **Cortex, memory and grown neurons** (the fast way, see `BRAIN.md`): a frozen pretrained language model reads every event as a sentence; a memory grows a new prototype neuron whenever something unlike anything seen before happens; and you can grow a neuron from one sentence in milliseconds with `python -m sentinel grow --name NAME "what to watch for"`. It learns one-shot from your "real" / "fine" answers.
 * **Hands**: `alert`, `report`, `request_action`. A request is a sentence on the dashboard ("To stop it: taskkill /PID 1234"). The Sentinel never runs it.
 
 ### Wi-Fi: what it can and cannot say
@@ -83,7 +84,7 @@ Stronger isolation (optional): run it under a separate standard account with rea
 ```
 purpose (your words) ─► teacher ─► spec (JSON) ─► validate ─► synthetic threats on YOUR normal windows ─► train ─► gate ─► proposal ─► YOU approve
                          Claude or                 schema      lookalikes labelled harmless              NumPy MLP  tests
-                         hand-written                          (529 numbers)
+                         hand-written                          (545 numbers)
 ```
 
 ```bash
@@ -96,8 +97,8 @@ python -m sentinel.forge list --home DIR ; python -m sentinel.forge show 1 --hom
 python -m sentinel.forge approve 1 --home DIR --by YOURNAME      # also: reject, disable, enable
 ```
 
-* **The teacher** (`--teacher claude`, model `claude-opus-5-5`, needs `ANTHROPIC_API_KEY`) is forced to answer in a JSON schema that names only the 31 real features. The answer is then validated again by the Forge: unknown features, out-of-range numbers, links, code or commands in text, duplicate names are all rejected, and unknown fields are dropped. If the model declines (its safety classifier can fire on security topics) you get a clear message; `--fallbacks` lets the API retry on another model, and `--spec` lets you write the design yourself. `--teacher mock` is an offline library for tests.
-* **What leaves your machine** with the Claude teacher: your purpose sentence, and only if you add `--share-baseline-stats`, the median and 95th percentile of the 31 counts. No names, paths, programs or addresses.
+* **The teacher** (`--teacher claude`, model `claude-opus-5-5`, needs `ANTHROPIC_API_KEY`) is forced to answer in a JSON schema that names only the 32 real features. The answer is then validated again by the Forge: unknown features, out-of-range numbers, links, code or commands in text, duplicate names are all rejected, and unknown fields are dropped. If the model declines (its safety classifier can fire on security topics) you get a clear message; `--fallbacks` lets the API retry on another model, and `--spec` lets you write the design yourself. `--teacher mock` is an offline library for tests.
+* **What leaves your machine** with the Claude teacher: your purpose sentence, and only if you add `--share-baseline-stats`, the median and 95th percentile of the 32 counts. No names, paths, programs or addresses.
 * **The gate** (all must hold; the code, not the model, decides): at least 3,800 windows of this machine's real normal history (about 32 hours at 30 s) so that 960 untouched later windows can show no false alarm (that bounds the false-alarm rate at 0.4% per window, 95% confidence); mean recall of at least 90% on freshly built threat windows; no scenario below 50%; no harmless lookalike fired on more than 20%. The alarm line is chosen on a separate calibration slice and never on the test slice. A neuron made from the built-in demo history is marked `demo` and cannot be approved.
 * **What the report also shows**: the same threats at half strength, a scenario left out of training (leave-one-out), and **what the always-on reflex alone catches** on the same threats, so a neuron that adds nothing is visible.
 
