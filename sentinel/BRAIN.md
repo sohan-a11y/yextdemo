@@ -21,7 +21,7 @@ This answers three questions: how the brain is built, how its intelligence grows
 | Part | Neurons / weights | Where it comes from | How it changes |
 |---|---|---|---|
 | Cortex | 6 layers x 1,536 MLP neurons = 9,216; 22.7M weights | inherited from a pretrained language model | never (frozen) |
-| Memory | one 384-weight prototype per kind of normal event; capped (default 4,000) | born from experience | a new prototype when an event resembles nothing seen; the closest two merge when full |
+| Memory | one 384-weight prototype per kind of normal event; capped (default 8,000) | born from experience | a new prototype when an event resembles nothing seen; the closest two merge when full |
 | Concept neurons | 384 weights each, plus 384 per example or counter-example | **born from one sentence you write** | one-shot: every "real" adds an example, every "fine" a counter-example |
 | Reflex | about 500 weights (about 20 small autoencoders over 32 window counts) | learned on this machine during a childhood of a few hours | keeps learning from windows it judged normal |
 | Instincts | 10 rules | written by people | edited by people |

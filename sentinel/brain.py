@@ -22,7 +22,8 @@ from .features import to_vector
 from .instincts import Instincts, SEV, alert as mk_alert
 from .neurons import KitEnsemble, ForgeNeuron
 
-CORTEX_DEFAULTS = {"enabled": True, "model_dir": None, "childhood_events": 2000, "novel_threshold": 0.35, "vigilance": 0.80, "capacity": 4000,
+# vigilance 0.7 with room for 8,000 prototypes matched an exact nearest-neighbour memory in the benchmark (research/results) at half the storage
+CORTEX_DEFAULTS = {"enabled": True, "model_dir": None, "childhood_events": 2000, "novel_threshold": 0.35, "vigilance": 0.70, "capacity": 8000,
                    "max_per_window": 256, "min_calibration": 1000}
 
 DEFAULT_COOLDOWN = {"info": 3600, "low": 1800, "medium": 600, "high": 300}

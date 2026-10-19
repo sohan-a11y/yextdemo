@@ -70,7 +70,7 @@ def growth(r):
     if knn:
         kv = np.mean([e["auroc_new_vs_familiar"] for e in knn]); n = int(np.mean([e["prototypes"] for e in knn]))
         ax.axhline(kv, color=GRAY, lw=1.5)
-        ax.text(v8[0], kv + 0.006, f"keep every event ({n:,} vectors): {kv:.3f}", color=INK2, fontsize=9)
+        ax.text(v8[0], kv - 0.016, f"reference: keep every event ({n:,} vectors) {kv:.3f}", color=INK2, fontsize=9)
     ax.set_xscale("log"); ax.set_xticks(v8, [f"{c:,}" for c in v8]); ax.minorticks_off()
     ax.set_xlabel("memory capacity (prototype neurons)"); ax.set_ylabel("AUROC: new tools vs familiar tools")
     ax.set_title("A bounded, self-growing memory recognises what is new", loc="left", fontsize=11.5)
@@ -96,8 +96,8 @@ def per_concept(r):
 def main():
     os.makedirs(OUT, exist_ok=True)
     r = json.load(open(os.path.join("research", "results", "instant_neurons.json")))
-    bars(r, "auroc_unseen", "fig1_methods_auroc.png", "Recognising an activity on tools never shown (20 concepts x 5 splits)", "AUROC (0.5 = chance)", (0.45, 1.0))
-    bars(r, "tpr_unseen@0.01", "fig1b_methods_tpr.png", "Share caught when the alarm line allows 1% false alarms", "true positive rate at 1% false alarms", (0.0, 0.75))
+    bars(r, "auroc_unseen", "fig1_methods_auroc.png", "Recognising an activity on tools never shown", "AUROC (0.5 = chance) - mean over 20 concepts x 5 splits", (0.45, 1.0))
+    bars(r, "tpr_unseen@0.01", "fig1b_methods_tpr.png", "Share caught when 1% false alarms are allowed", "true positive rate on tools never shown, alarm line set for 1% false alarms", (0.0, 0.75))
     per_concept(r)
     if r.get("feedback"):
         feedback(r)
