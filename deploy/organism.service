@@ -1,0 +1,21 @@
+# /etc/systemd/system/organism.service   then:  systemctl daemon-reload && systemctl enable --now organism
+[Unit]
+Description=The organism (persistent, lives in this machine)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=organism
+WorkingDirectory=/opt/organism
+Environment=ORGANISM_TOKEN=change-me
+Environment=OMP_NUM_THREADS=2
+ExecStart=/opt/organism/venv/bin/python -m lkm.live run --home /var/lib/organism
+Restart=always
+RestartSec=5
+TimeoutStopSec=120
+NoNewPrivileges=true
+ProtectSystem=full
+ReadWritePaths=/var/lib/organism
+
+[Install]
+WantedBy=multi-user.target

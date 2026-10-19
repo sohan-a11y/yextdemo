@@ -1,0 +1,242 @@
+[tests] run=40 failures=0 errors=0
+[syn-control] fitting baselines on 8 datasets, 40000 nodes
+[syn-control] OOF base logits + NCA training
+[nca] step 100/600 train-loss 0.2528 val-bce 0.2942 (10s)
+[nca] step 200/600 train-loss 0.2592 val-bce 0.2914 (16s)
+[nca] step 300/600 train-loss 0.2575 val-bce 0.2915 (22s)
+[nca] step 400/600 train-loss 0.2553 val-bce 0.2907 (28s)
+[nca] step 500/600 train-loss 0.2527 val-bce 0.2921 (33s)
+[nca] step 600/600 train-loss 0.2563 val-bce 0.2903 (40s)
+[syn-control] evolving workers: variant=full
+[es] start fitness 0.316
+[es] gen 5/40 pop-mean 0.351 theta-fitness 0.369 best 0.369 (39s)
+[es] gen 10/40 pop-mean 0.362 theta-fitness 0.396 best 0.396 (67s)
+[es] gen 15/40 pop-mean 0.388 theta-fitness 0.382 best 0.396 (94s)
+[es] gen 20/40 pop-mean 0.395 theta-fitness 0.389 best 0.396 (122s)
+[es] gen 25/40 pop-mean 0.398 theta-fitness 0.373 best 0.396 (149s)
+[es] gen 30/40 pop-mean 0.399 theta-fitness 0.378 best 0.396 (179s)
+[es] gen 35/40 pop-mean 0.408 theta-fitness 0.384 best 0.396 (208s)
+[es] gen 40/40 pop-mean 0.411 theta-fitness 0.387 best 0.396 (237s)
+[syn-control] evolving workers: variant=no_scent
+[es] start fitness 0.296
+[es] gen 5/40 pop-mean 0.352 theta-fitness 0.362 best 0.362 (38s)
+[es] gen 10/40 pop-mean 0.359 theta-fitness 0.389 best 0.389 (67s)
+[es] gen 15/40 pop-mean 0.381 theta-fitness 0.393 best 0.393 (96s)
+[es] gen 20/40 pop-mean 0.391 theta-fitness 0.378 best 0.393 (125s)
+[es] gen 25/40 pop-mean 0.392 theta-fitness 0.391 best 0.393 (154s)
+[es] gen 30/40 pop-mean 0.399 theta-fitness 0.400 best 0.400 (181s)
+[es] gen 35/40 pop-mean 0.411 theta-fitness 0.376 best 0.400 (210s)
+[es] gen 40/40 pop-mean 0.414 theta-fitness 0.396 best 0.400 (240s)
+[syn-control] evolving workers: variant=no_plastic
+[es] start fitness 0.313
+[es] gen 5/40 pop-mean 0.350 theta-fitness 0.362 best 0.362 (38s)
+[es] gen 10/40 pop-mean 0.360 theta-fitness 0.387 best 0.387 (66s)
+[es] gen 15/40 pop-mean 0.384 theta-fitness 0.402 best 0.402 (96s)
+[es] gen 20/40 pop-mean 0.393 theta-fitness 0.387 best 0.402 (125s)
+[es] gen 25/40 pop-mean 0.395 theta-fitness 0.384 best 0.402 (154s)
+[es] gen 30/40 pop-mean 0.400 theta-fitness 0.378 best 0.402 (183s)
+[es] gen 35/40 pop-mean 0.409 theta-fitness 0.378 best 0.402 (210s)
+[es] gen 40/40 pop-mean 0.413 theta-fitness 0.382 best 0.402 (238s)
+[syn-control] evolving workers: variant=workers_only
+[es] start fitness 0.311
+[es] gen 5/40 pop-mean 0.353 theta-fitness 0.349 best 0.349 (11s)
+[es] gen 10/40 pop-mean 0.355 theta-fitness 0.407 best 0.407 (16s)
+[es] gen 15/40 pop-mean 0.377 theta-fitness 0.382 best 0.407 (21s)
+[es] gen 20/40 pop-mean 0.384 theta-fitness 0.396 best 0.407 (25s)
+[es] gen 25/40 pop-mean 0.397 theta-fitness 0.391 best 0.407 (30s)
+[es] gen 30/40 pop-mean 0.403 theta-fitness 0.396 best 0.407 (35s)
+[es] gen 35/40 pop-mean 0.410 theta-fitness 0.398 best 0.407 (40s)
+[es] gen 40/40 pop-mean 0.413 theta-fitness 0.404 best 0.407 (44s)
+[tune] picked: online->online[l2=40,eps=0], cells->cells[off,eps=0], org->org:full[l2=200]
+[control] evaluation done in 57s; verdict {'diff': -0.08244444444444443, 'lo': -0.09977777777777778, 'hi': -0.06310555555555548, 'p_pos': 0.0, 'verdict': 'LOSS'}
+[syn-contagion] fitting baselines on 8 datasets, 40000 nodes
+[syn-contagion] OOF base logits + NCA training
+[nca] step 100/600 train-loss 0.2564 val-bce 0.2939 (6s)
+[nca] step 200/600 train-loss 0.2623 val-bce 0.2914 (12s)
+[nca] step 300/600 train-loss 0.2603 val-bce 0.2935 (18s)
+[nca] step 400/600 train-loss 0.2573 val-bce 0.2914 (23s)
+[nca] step 500/600 train-loss 0.2550 val-bce 0.2950 (29s)
+[nca] step 600/600 train-loss 0.2577 val-bce 0.2905 (35s)
+[syn-contagion] evolving workers: variant=full
+[es] start fitness 0.333
+[es] gen 5/40 pop-mean 0.359 theta-fitness 0.362 best 0.362 (35s)
+[es] gen 10/40 pop-mean 0.366 theta-fitness 0.360 best 0.362 (63s)
+[es] gen 15/40 pop-mean 0.393 theta-fitness 0.402 best 0.402 (92s)
+[es] gen 20/40 pop-mean 0.397 theta-fitness 0.402 best 0.402 (120s)
+[es] gen 25/40 pop-mean 0.399 theta-fitness 0.402 best 0.402 (164s)
+[es] gen 30/40 pop-mean 0.394 theta-fitness 0.391 best 0.402 (200s)
+[es] gen 35/40 pop-mean 0.408 theta-fitness 0.391 best 0.402 (229s)
+[es] gen 40/40 pop-mean 0.407 theta-fitness 0.418 best 0.418 (259s)
+[syn-contagion] evolving workers: variant=no_scent
+[es] start fitness 0.344
+[es] gen 5/40 pop-mean 0.361 theta-fitness 0.364 best 0.364 (37s)
+[es] gen 10/40 pop-mean 0.367 theta-fitness 0.373 best 0.373 (65s)
+[es] gen 15/40 pop-mean 0.389 theta-fitness 0.384 best 0.384 (94s)
+[es] gen 20/40 pop-mean 0.392 theta-fitness 0.389 best 0.389 (121s)
+[es] gen 25/40 pop-mean 0.394 theta-fitness 0.413 best 0.413 (149s)
+[es] gen 30/40 pop-mean 0.394 theta-fitness 0.411 best 0.413 (175s)
+[es] gen 35/40 pop-mean 0.410 theta-fitness 0.427 best 0.427 (200s)
+[es] gen 40/40 pop-mean 0.408 theta-fitness 0.420 best 0.427 (227s)
+[syn-contagion] evolving workers: variant=no_plastic
+[es] start fitness 0.331
+[es] gen 5/40 pop-mean 0.364 theta-fitness 0.373 best 0.373 (32s)
+[es] gen 10/40 pop-mean 0.373 theta-fitness 0.382 best 0.382 (59s)
+[es] gen 15/40 pop-mean 0.392 theta-fitness 0.384 best 0.384 (84s)
+[es] gen 20/40 pop-mean 0.401 theta-fitness 0.420 best 0.420 (111s)
+[es] gen 25/40 pop-mean 0.404 theta-fitness 0.429 best 0.429 (137s)
+[es] gen 30/40 pop-mean 0.403 theta-fitness 0.422 best 0.429 (164s)
+[es] gen 35/40 pop-mean 0.415 theta-fitness 0.418 best 0.429 (191s)
+[es] gen 40/40 pop-mean 0.415 theta-fitness 0.398 best 0.429 (218s)
+[syn-contagion] evolving workers: variant=workers_only
+[es] start fitness 0.336
+[es] gen 5/40 pop-mean 0.362 theta-fitness 0.367 best 0.367 (12s)
+[es] gen 10/40 pop-mean 0.376 theta-fitness 0.398 best 0.398 (17s)
+[es] gen 15/40 pop-mean 0.397 theta-fitness 0.404 best 0.404 (22s)
+[es] gen 20/40 pop-mean 0.408 theta-fitness 0.402 best 0.404 (27s)
+[es] gen 25/40 pop-mean 0.403 theta-fitness 0.413 best 0.413 (32s)
+[es] gen 30/40 pop-mean 0.405 theta-fitness 0.422 best 0.422 (37s)
+[es] gen 35/40 pop-mean 0.428 theta-fitness 0.438 best 0.438 (41s)
+[es] gen 40/40 pop-mean 0.421 theta-fitness 0.431 best 0.438 (47s)
+[tune] picked: online->online[l2=40,eps=0], cells->cells[off,eps=0], org->org:full[off]
+[contagion] evaluation done in 1173s; verdict {'diff': -0.0268888888888889, 'lo': -0.03888888888888892, 'hi': -0.01577777777777779, 'p_pos': 0.0, 'verdict': 'LOSS'}
+[syn-contagion-rho0.1] fitting baselines on 8 datasets, 40000 nodes
+[syn-contagion-rho0.1] OOF base logits + NCA training
+[nca] step 100/600 train-loss 0.2664 val-bce 0.2773 (7s)
+[nca] step 200/600 train-loss 0.2720 val-bce 0.2787 (13s)
+[nca] step 300/600 train-loss 0.2706 val-bce 0.2844 (19s)
+[nca] step 400/600 train-loss 0.2674 val-bce 0.2771 (25s)
+[nca] step 500/600 train-loss 0.2650 val-bce 0.2812 (31s)
+[nca] step 600/600 train-loss 0.2685 val-bce 0.2798 (37s)
+[syn-contagion-rho0.25] fitting baselines on 8 datasets, 40000 nodes
+[syn-contagion-rho0.25] OOF base logits + NCA training
+[nca] step 100/600 train-loss 0.2605 val-bce 0.2727 (7s)
+[nca] step 200/600 train-loss 0.2666 val-bce 0.2745 (12s)
+[nca] step 300/600 train-loss 0.2653 val-bce 0.2780 (18s)
+[nca] step 400/600 train-loss 0.2621 val-bce 0.2735 (25s)
+[nca] step 500/600 train-loss 0.2599 val-bce 0.2762 (31s)
+[nca] step 600/600 train-loss 0.2631 val-bce 0.2750 (36s)
+[syn-contagion-rho0.5] fitting baselines on 8 datasets, 40000 nodes
+[syn-contagion-rho0.5] OOF base logits + NCA training
+[nca] step 100/600 train-loss 0.2564 val-bce 0.2639 (7s)
+[nca] step 200/600 train-loss 0.2623 val-bce 0.2654 (13s)
+[nca] step 300/600 train-loss 0.2603 val-bce 0.2695 (19s)
+[nca] step 400/600 train-loss 0.2573 val-bce 0.2631 (25s)
+[nca] step 500/600 train-loss 0.2550 val-bce 0.2682 (30s)
+[nca] step 600/600 train-loss 0.2577 val-bce 0.2659 (36s)
+[syn-contagion-rho1.0] fitting baselines on 8 datasets, 40000 nodes
+[syn-contagion-rho1.0] OOF base logits + NCA training
+[nca] step 100/600 train-loss 0.2483 val-bce 0.2482 (7s)
+[nca] step 200/600 train-loss 0.2547 val-bce 0.2488 (13s)
+[nca] step 300/600 train-loss 0.2528 val-bce 0.2547 (18s)
+[nca] step 400/600 train-loss 0.2499 val-bce 0.2493 (24s)
+[nca] step 500/600 train-loss 0.2470 val-bce 0.2541 (30s)
+[nca] step 600/600 train-loss 0.2498 val-bce 0.2503 (36s)
+[tune] picked: online->online[l2=40,eps=0], cells->cells[l2=200,eps=0], org->org:full[l2=40]
+[syn-cascade] fitting baselines on 8 datasets, 40000 nodes
+[syn-cascade] OOF base logits + NCA training
+[nca] step 100/600 train-loss 0.2070 val-bce 0.2415 (7s)
+[nca] step 200/600 train-loss 0.2096 val-bce 0.2378 (13s)
+[nca] step 300/600 train-loss 0.2078 val-bce 0.2395 (18s)
+[nca] step 400/600 train-loss 0.2060 val-bce 0.2343 (24s)
+[nca] step 500/600 train-loss 0.2016 val-bce 0.2388 (30s)
+[nca] step 600/600 train-loss 0.2041 val-bce 0.2334 (35s)
+[syn-cascade] evolving workers: variant=full
+[es] start fitness 0.440
+[es] gen 5/40 pop-mean 0.421 theta-fitness 0.436 best 0.440 (34s)
+[es] gen 10/40 pop-mean 0.432 theta-fitness 0.444 best 0.444 (61s)
+[es] gen 15/40 pop-mean 0.452 theta-fitness 0.431 best 0.444 (88s)
+[es] gen 20/40 pop-mean 0.454 theta-fitness 0.460 best 0.460 (114s)
+[es] gen 25/40 pop-mean 0.459 theta-fitness 0.449 best 0.460 (142s)
+[es] gen 30/40 pop-mean 0.458 theta-fitness 0.453 best 0.460 (170s)
+[es] gen 35/40 pop-mean 0.465 theta-fitness 0.444 best 0.460 (198s)
+[es] gen 40/40 pop-mean 0.471 theta-fitness 0.456 best 0.460 (225s)
+[syn-cascade] evolving workers: variant=no_scent
+[es] start fitness 0.447
+[es] gen 5/40 pop-mean 0.424 theta-fitness 0.431 best 0.447 (36s)
+[es] gen 10/40 pop-mean 0.434 theta-fitness 0.418 best 0.447 (64s)
+Process SpawnPoolWorker-40:
+Traceback (most recent call last):
+  File "/usr/lib/python3.13/multiprocessing/pool.py", line 131, in worker
+    put((job, i, result))
+    ~~~^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.13/multiprocessing/queues.py", line 397, in put
+    self._writer.send_bytes(obj)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/usr/lib/python3.13/multiprocessing/connection.py", line 205, in send_bytes
+    self._send_bytes(m[offset:offset + size])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.13/multiprocessing/connection.py", line 432, in _send_bytes
+    self._send(header + buf)
+    ~~~~~~~~~~^^^^^^^^^^^^^^
+  File "/usr/lib/python3.13/multiprocessing/connection.py", line 389, in _send
+    n = write(self._handle, buf)
+BrokenPipeError: [Errno 32] Broken pipe
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/lib/python3.13/multiprocessing/process.py", line 313, in _bootstrap
+    self.run()
+    ~~~~~~~~^^
+  File "/usr/lib/python3.13/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.13/multiprocessing/pool.py", line 136, in worker
+    put((job, i, (False, wrapped)))
+    ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.13/multiprocessing/queues.py", line 397, in put
+    self._writer.send_bytes(obj)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/usr/lib/python3.13/multiprocessing/connection.py", line 205, in send_bytes
+    self._send_bytes(m[offset:offset + size])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.13/multiprocessing/connection.py", line 432, in _send_bytes
+    self._send(header + buf)
+    ~~~~~~~~~~^^^^^^^^^^^^^^
+  File "/usr/lib/python3.13/multiprocessing/connection.py", line 389, in _send
+    n = write(self._handle, buf)
+BrokenPipeError: [Errno 32] Broken pipe
+Process SpawnPoolWorker-41:
+Traceback (most recent call last):
+  File "/usr/lib/python3.13/multiprocessing/pool.py", line 131, in worker
+    put((job, i, result))
+    ~~~^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.13/multiprocessing/queues.py", line 397, in put
+    self._writer.send_bytes(obj)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/usr/lib/python3.13/multiprocessing/connection.py", line 205, in send_bytes
+    self._send_bytes(m[offset:offset + size])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.13/multiprocessing/connection.py", line 432, in _send_bytes
+    self._send(header + buf)
+    ~~~~~~~~~~^^^^^^^^^^^^^^
+  File "/usr/lib/python3.13/multiprocessing/connection.py", line 389, in _send
+    n = write(self._handle, buf)
+BrokenPipeError: [Errno 32] Broken pipe
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/lib/python3.13/multiprocessing/process.py", line 313, in _bootstrap
+    self.run()
+    ~~~~~~~~^^
+  File "/usr/lib/python3.13/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.13/multiprocessing/pool.py", line 136, in worker
+    put((job, i, (False, wrapped)))
+    ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.13/multiprocessing/queues.py", line 397, in put
+    self._writer.send_bytes(obj)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/usr/lib/python3.13/multiprocessing/connection.py", line 205, in send_bytes
+    self._send_bytes(m[offset:offset + size])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.13/multiprocessing/connection.py", line 432, in _send_bytes
+    self._send(header + buf)
+    ~~~~~~~~~~^^^^^^^^^^^^^^
+  File "/usr/lib/python3.13/multiprocessing/connection.py", line 389, in _send
+    n = write(self._handle, buf)
+BrokenPipeError: [Errno 32] Broken pipe
+/usr/lib/python3.13/multiprocessing/resource_tracker.py:479: UserWarning: resource_tracker: There appear to be 6 leaked semaphore objects to clean up at shutdown: {'/loky-4996-9nm2y105', '/loky-4996-cpe3r4uu', '/loky-4996-usl7nnu5', '/loky-4996-0ssafmzg', '/loky-4996-1kitmmi6', '/loky-4996-aolsa2ms'}
+  warnings.warn(

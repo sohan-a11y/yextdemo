@@ -49,6 +49,14 @@ Total saving = analyst time saved + AI compute avoided versus a brute-force "re-
 4. *Value:* "Here is the back-of-envelope with every assumption visible. Tell me which numbers are wrong and I will change them live."
 5. *Status:* "This is a prototype on synthetic data. The ask is a read-only pilot on one customer."
 
+## Living Knowledge Mesh organism study (`lkm/`)
+
+An artificial-life study: workers with neural-cellular-automaton brains live on a knowledge graph and learn which facts need attention. The final build gives the
+organism language (a small pretrained text encoder, a learned vocabulary between cells, plain-sentence explanations). `python -m lkm.run_all --final --comm both --out lkm_out_final`
+reproduces everything; the report is `lkm_out_final/report.html`. Short version: reading names and strings lifted every method by about 5 points on real Overture Maps data;
+the cell field wins in synthetic worlds with clustered, lexical or shifting structure; against a baseline that reads as well, the organism does not beat it on real data
+and the workers add nothing over the cells. Details in `lkm/README.md`.
+
 ## What the prototype demonstrates
 
 - An interactive Three.js 3D network view for synthetic entities, sources and review signals.
@@ -92,3 +100,11 @@ That is a research question to measure against simple rule-based and centralized
 ## Attribution
 
 Created by Sohan Merugu as an independent concept prototype. Not affiliated with, endorsed by, or an official product of Yext.
+
+## Running the organism as a living service (`lkm/live/`)
+
+The organism can live in a machine: it starts at boot, keeps its memory in a crash-safe database, watches a data source, proposes what to check next, learns from the answers that come back, and shows a phone-friendly dashboard. See `lkm/live/LIVE.md`; deployment files are in `deploy/` (Docker, systemd). `python -m lkm.live selftest` proves it survives being killed.
+
+## The Sentinel and the Neuron Forge (`sentinel/`)
+
+An organism that lives on a real machine (written for Windows, tested on Linux) and watches its processes, connections, files, router and Wi-Fi. It is **read-only and alert-only**: the only things it can do are `alert`, `report` and `request_action` (a sentence for a human), enforced in code and by a static scan in the tests, not by its neurons. The **Neuron Forge** (`python -m sentinel.forge`) turns a purpose written in plain words into a new neuron: a language model designs a validated spec, the Forge builds synthetic threats on the machine's own normal history, trains a 16-unit network, tests it (false alarms on untouched later windows, recall, a scenario left out), and a person approves it. See `sentinel/SENTINEL.md` for design, safety limits, Windows install (untested on Windows) and measured results.

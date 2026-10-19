@@ -1,0 +1,13 @@
+[commselect] control cont: 0.4378 (cells[off,eps=0]) [49s]
+[commselect] control lex: 0.4544 (cells[l2=200,eps=0]) [117s]
+[commselect] control both: 0.4433 (cells[off,eps=0]) [199s]
+[commselect] contagion cont: 0.4622 (cells[l2=200,eps=0]) | shifted 0.3378 (cells[l2=200,eps=0]) [51s]
+[commselect] contagion lex: 0.4533 (cells[off,eps=0]) | shifted 0.2256 (cells[off,eps=0]) [127s]
+[commselect] contagion both: 0.4589 (cells[l2=200,eps=0]) | shifted 0.3444 (cells[l2=200,eps=0]) [222s]
+[commselect] cascade cont: 0.5522 (cells[off,eps=0]) [46s]
+[commselect] cascade lex: 0.5167 (cells[off,eps=0]) [114s]
+[commselect] cascade both: 0.5456 (cells[off,eps=0]) [198s]
+[commselect] lexical (names readable) cont: 0.5922 (cells[off,eps=0]) [52s]
+[commselect] lexical (names readable) lex: 0.5856 (cells[off,eps=0]) [119s]
+[commselect] lexical (names readable) both: 0.5856 (cells[l2=200,eps=0]) [205s]
+[commselect] decision {'comm': 'both', 'rule': 'higher mean validation hit over synthetic families among {lex, both}; reject if real-data validation AUC is >0.003 below the best mode'} {'cont': 0.4764444444444445, 'lex': 0.4471111111111111, 'both': 0.4755555555555556} {'cont': 0.8178504292301679, 'lex': 0.8159586320126234, 'both': 0.8158175589303978}

@@ -1,0 +1,62 @@
+[real] loaded cached dataset: 399643 places
+[lang] string features (399643, 22) (24s)
+[lang] name-neighbour features (40s)
+[lang] 181295 language edges (214s)
+[real] language layer: {'features': 49, 'edges': 181295} -> 99 features
+[real] split: {'n_train': 236394, 'n_chunks': 23, 'n_val': 102986, 'n_test': 60263, 'n_val_chunks': 7, 'n_test_pools': 7, 'test_pool_sizes': [8144, 8816, 13629, 8338, 7871, 7757, 5708], 'base_rate_train': 0.12270616005482372, 'base_rate_test': 0.1132701657733601, 'base_rate_gone_test': 0.04555033768647429}
+built in 258
+(399643, 99) {'features': 49, 'edges': 181295}
+w_social       mean   0.027 std  0.163  corr_y +0.000
+w_builder      mean   0.010 std  0.101  corr_y -0.019
+w_own          mean   0.709 std  0.454  corr_y +0.012
+w_https        mean   0.302 std  0.459  corr_y +0.008
+w_depth        mean   0.178 std  0.249  corr_y -0.028
+w_namematch    mean   0.427 std  0.429  corr_y -0.037
+p_toll         mean   0.036 std  0.187  corr_y +0.010
+p_nyc          mean   0.670 std  0.470  corr_y -0.038
+p_other        mean   0.172 std  0.378  corr_y +0.022
+p_two          mean   0.000 std  0.013  corr_y -0.005
+a_unit         mean   0.153 std  0.360  corr_y +0.097
+a_digit        mean   0.947 std  0.225  corr_y +0.024
+a_zip4         mean   0.363 std  0.481  corr_y +0.012
+loc_manh       mean   0.583 std  0.493  corr_y +0.071
+loc_bk         mean   0.146 std  0.353  corr_y -0.050
+loc_q          mean   0.005 std  0.069  corr_y -0.016
+loc_bx         mean   0.056 std  0.230  corr_y -0.005
+loc_si         mean   0.000 std  0.006  corr_y -0.002
+b_namematch    mean   0.049 std  0.209  corr_y +0.005
+s_baseconf     mean   0.692 std  0.264  corr_y -0.125
+s_sigconf      mean   0.788 std  0.247  corr_y -0.031
+/usr/local/lib/python3.13/dist-packages/numpy/lib/_function_base_impl.py:3036: RuntimeWarning: invalid value encountered in divide
+  c /= stddev[:, None]
+/usr/local/lib/python3.13/dist-packages/numpy/lib/_function_base_impl.py:3037: RuntimeWarning: invalid value encountered in divide
+  c /= stddev[None, :]
+s_confage      mean   0.329 std  0.000  corr_y +nan
+lx_legal       mean   0.110 std  0.312  corr_y +0.106
+lx_digit       mean   0.055 std  0.227  corr_y -0.009
+lx_shout       mean   0.012 std  0.108  corr_y -0.006
+lx_generic     mean   0.136 std  0.343  corr_y -0.029
+lx_words       mean   0.393 std  0.185  corr_y -0.005
+lx_symbol      mean   0.065 std  0.246  corr_y -0.003
+lx_empty       mean   0.000 std  0.000  corr_y +nan
+nn_best        mean   0.466 std  0.250  corr_y +0.014
+nn_dup         mean   0.041 std  0.110  corr_y +0.011
+nn_family      mean   0.036 std  0.092  corr_y +0.006
+nn_density     mean   0.946 std  0.187  corr_y +0.056
+tx0            mean   0.005 std  0.498  corr_y -0.150
+tx1            mean  -0.003 std  0.504  corr_y +0.001
+tx2            mean   0.006 std  0.498  corr_y -0.024
+tx3            mean  -0.009 std  0.506  corr_y -0.070
+tx4            mean  -0.002 std  0.498  corr_y +0.106
+tx5            mean  -0.005 std  0.499  corr_y +0.020
+tx6            mean   0.001 std  0.497  corr_y -0.038
+tx7            mean   0.000 std  0.496  corr_y +0.054
+tx8            mean  -0.002 std  0.497  corr_y +0.011
+tx9            mean   0.001 std  0.497  corr_y +0.040
+tx10           mean  -0.004 std  0.500  corr_y -0.019
+tx11           mean  -0.001 std  0.498  corr_y -0.034
+tx12           mean   0.001 std  0.500  corr_y +0.025
+tx13           mean  -0.000 std  0.497  corr_y -0.011
+tx14           mean  -0.001 std  0.498  corr_y +0.022
+tx15           mean  -0.000 std  0.501  corr_y +0.012
+{'sp': 2397858, 'br': 222467, 'ad': 368440}

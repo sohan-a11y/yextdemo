@@ -1,0 +1,55 @@
+[data] tldr: 31930 distinct commands from 7222 tools
+[concepts] archive: 122 positives over 19 tools, 31087 negatives
+[concepts] packages: 1006 positives over 22 tools, 28844 negatives
+[concepts] netinfo: 263 positives over 18 tools, 29726 negatives
+[concepts] containers: 665 positives over 6 tools, 29191 negatives
+[concepts] vcs: 893 positives over 4 tools, 29491 negatives
+[concepts] users: 78 positives over 14 tools, 30384 negatives
+[concepts] procs: 94 positives over 13 tools, 30913 negatives
+[concepts] disks: 104 positives over 15 tools, 30293 negatives
+[concepts] transfer: 87 positives over 10 tools, 30107 negatives
+[concepts] schedule: 22 positives over 5 tools, 31020 negatives
+[concepts] services: 291 positives over 7 tools, 30133 negatives
+[concepts] search: 60 positives over 9 tools, 30806 negatives
+[concepts] remote: 50 positives over 5 tools, 29614 negatives
+[concepts] crypto: 143 positives over 11 tools, 30358 negatives
+[concepts] media: 92 positives over 10 tools, 29661 negatives
+[concepts] databases: 43 positives over 9 tools, 30801 negatives
+[concepts] firewall: 85 positives over 6 tools, 31790 negatives
+[concepts] logs: 41 positives over 6 tools, 30553 negatives
+[concepts] editors: 54 positives over 8 tools, 31363 negatives
+[concepts] python: 269 positives over 8 tools, 31186 negatives
+[concepts] 2665 evaluations in 350s
+[feedback] ...
+[growth] ...
+[growth] seed 0: v=0.8 cap=500: 500 neurons AUROC 0.614, v=0.8 cap=2000: 2000 neurons AUROC 0.781, v=0.8 cap=8000: 8000 neurons AUROC 0.881, v=0.7 cap=8000: 7957 neurons AUROC 0.883, v=0.9 cap=8000: 8000 neurons AUROC 0.881, v=exact-kNN cap=None: 18125 neurons AUROC 0.884
+[growth] seed 1: v=0.8 cap=500: 500 neurons AUROC 0.626, v=0.8 cap=2000: 2000 neurons AUROC 0.788, v=0.8 cap=8000: 8000 neurons AUROC 0.878, v=0.7 cap=8000: 7835 neurons AUROC 0.880, v=0.9 cap=8000: 8000 neurons AUROC 0.878, v=exact-kNN cap=None: 17992 neurons AUROC 0.882
+[nl2bash] ...
+{"make_neuron_ms_median": 15.447597000047608, "make_neuron_ms_max": 18.078431000049022, "calibration_events": 20000, "encode_ms_per_event_batched": 0.8502469804678725}
+desc|k=0         AUROC unseen 0.915 seen 0.915 | TPR@1% 0.520 (test FPR 0.0099) TPR@0.1% 0.253 | make 4.3 ms
+desc_para1|k=0   AUROC unseen 0.900 seen 0.909 | TPR@1% 0.468 (test FPR 0.0099) TPR@0.1% 0.202 | make 4.3 ms
+desc_para2|k=0   AUROC unseen 0.903 seen 0.900 | TPR@1% 0.445 (test FPR 0.0099) TPR@0.1% 0.198 | make 4.3 ms
+keyword|k=0      AUROC unseen 0.638 seen 0.650 | TPR@1% 0.131 (test FPR 0.0021) TPR@0.1% 0.035 | make 24.2 ms
+lmn0_1|k=0       AUROC unseen 0.524 seen 0.534 | TPR@1% 0.029 (test FPR 0.0103) TPR@0.1% 0.005 | make 0.0 ms
+lmn0_16|k=0      AUROC unseen 0.725 seen 0.724 | TPR@1% 0.105 (test FPR 0.0102) TPR@0.1% 0.012 | make 0.0 ms
+proto|k=1        AUROC unseen 0.909 seen 0.941 | TPR@1% 0.492 (test FPR 0.0101) TPR@0.1% 0.223 | make 4.4 ms
+proto|k=3        AUROC unseen 0.908 seen 0.954 | TPR@1% 0.497 (test FPR 0.0101) TPR@0.1% 0.238 | make 4.4 ms
+proto|k=10       AUROC unseen 0.894 seen 0.974 | TPR@1% 0.486 (test FPR 0.0100) TPR@0.1% 0.219 | make 4.7 ms
+exonly|k=3       AUROC unseen 0.866 seen 0.937 | TPR@1% 0.381 (test FPR 0.0101) TPR@0.1% 0.166 | make 4.4 ms
+tfidf|k=3        AUROC unseen 0.711 seen 0.872 | TPR@1% 0.219 (test FPR 0.0098) TPR@0.1% 0.089 | make 0.0 ms
+rule|k=3         AUROC unseen 0.531 seen 0.760 | TPR@1% 0.005 (test FPR 0.0002) TPR@0.1% 0.003 | make 0.0 ms
+logreg|k=3       AUROC unseen 0.879 seen 0.941 | TPR@1% 0.426 (test FPR 0.0101) TPR@0.1% 0.186 | make 111.6 ms
+logreg|k=10      AUROC unseen 0.892 seen 0.982 | TPR@1% 0.516 (test FPR 0.0102) TPR@0.1% 0.231 | make 167.2 ms
+lmn_1|k=3        AUROC unseen 0.627 seen 0.766 | TPR@1% 0.114 (test FPR 0.0102) TPR@0.1% 0.040 | make 0.0 ms
+lmn_16|k=3       AUROC unseen 0.772 seen 0.880 | TPR@1% 0.226 (test FPR 0.0102) TPR@0.1% 0.103 | make 0.0 ms
+lmn_16|k=10      AUROC unseen 0.795 seen 0.925 | TPR@1% 0.298 (test FPR 0.0103) TPR@0.1% 0.116 | make 0.0 ms
+  desc|k=0 minus keyword|k=0: +0.277 [+0.233, +0.322]
+  desc|k=0 minus lmn0_16|k=0: +0.190 [+0.149, +0.236]
+  proto|k=3 minus tfidf|k=3: +0.197 [+0.153, +0.242]
+  proto|k=3 minus rule|k=3: +0.377 [+0.336, +0.412]
+  proto|k=3 minus lmn_16|k=3: +0.137 [+0.103, +0.170]
+  proto|k=3 minus exonly|k=3: +0.042 [+0.030, +0.055]
+  proto|k=3 minus logreg|k=3: +0.030 [+0.017, +0.043]
+  proto|k=10 minus logreg|k=10: +0.002 [-0.011, +0.014]
+  proto|k=3 minus desc|k=0: -0.007 [-0.017, +0.003]
+  lmn_16|k=3 minus lmn_1|k=3: +0.145 [+0.117, +0.174]

@@ -1,0 +1,11 @@
+# the watcher
+numpy>=1.24
+psutil>=5.9
+watchdog>=3.0
+# the cortex (borrowed language knowledge, CPU): install the model once with  python -m sentinel fetch-model
+onnxruntime>=1.16
+tokenizers>=0.15
+# optional: packet-level name look-ups (needs Npcap on Windows and administrator rights); the Sentinel works without it
+scapy>=2.5
+# optional: only for the Neuron Forge with a Claude teacher
+anthropic>=1.0

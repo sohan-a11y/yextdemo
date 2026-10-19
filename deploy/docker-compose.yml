@@ -1,0 +1,10 @@
+services:
+  organism:
+    build: { context: .., dockerfile: deploy/Dockerfile }
+    restart: unless-stopped            # comes back after a crash and after the machine reboots
+    environment:
+      ORGANISM_TOKEN: "${ORGANISM_TOKEN:?set a token}"   # required for the API and dashboard
+    volumes:
+      - ./data:/data                   # the organism's memory: organism.db, models/, habitat.json, outbox.jsonl, inbox/
+    ports:
+      - "127.0.0.1:8765:8765"          # put your own TLS/auth proxy in front before exposing it

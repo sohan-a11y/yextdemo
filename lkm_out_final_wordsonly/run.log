@@ -1,0 +1,358 @@
+[tests] run=62 failures=0 errors=0
+[syn-control] fitting baselines on 8 datasets, 40000 nodes
+[syn-control] OOF base logits + NCA training
+[nca] step 100/600 train-loss 0.2108 val-bce 0.2910 (12s)
+[nca] step 200/600 train-loss 0.2111 val-bce 0.2915 (21s)
+[nca] step 300/600 train-loss 0.2098 val-bce 0.2897 (29s)
+[nca] step 400/600 train-loss 0.2083 val-bce 0.2908 (39s)
+[nca] step 500/600 train-loss 0.2087 val-bce 0.2896 (47s)
+[nca] step 600/600 train-loss 0.2114 val-bce 0.2893 (56s)
+[syn-control] evolving workers: variant=full
+[es] start fitness 0.402
+[es] gen 5/40 pop-mean 0.409 theta-fitness 0.447 best 0.447 (39s)
+[es] gen 10/40 pop-mean 0.427 theta-fitness 0.418 best 0.447 (75s)
+[es] gen 15/40 pop-mean 0.441 theta-fitness 0.451 best 0.451 (110s)
+[es] gen 20/40 pop-mean 0.445 theta-fitness 0.429 best 0.451 (145s)
+[es] gen 25/40 pop-mean 0.449 theta-fitness 0.444 best 0.451 (179s)
+[es] gen 30/40 pop-mean 0.449 theta-fitness 0.438 best 0.451 (214s)
+[es] gen 35/40 pop-mean 0.449 theta-fitness 0.449 best 0.451 (248s)
+[es] gen 40/40 pop-mean 0.452 theta-fitness 0.456 best 0.456 (284s)
+[tune] picked: online->online[rev,l2=40,eps=0], cells->cells[l2=200,eps=0], org->org:full[l2=40]
+[control] evaluation done in 102s; verdict {'diff': -0.007777777777777764, 'lo': -0.019444444444444434, 'hi': 0.0027805555555555856, 'p_pos': 0.086, 'verdict': 'TIE'}
+[syn-contagion] fitting baselines on 8 datasets, 40000 nodes
+[syn-contagion] OOF base logits + NCA training
+[nca] step 100/600 train-loss 0.2166 val-bce 0.2920 (10s)
+[nca] step 200/600 train-loss 0.2160 val-bce 0.2915 (20s)
+[nca] step 300/600 train-loss 0.2142 val-bce 0.2924 (30s)
+[nca] step 400/600 train-loss 0.2126 val-bce 0.2917 (39s)
+[nca] step 500/600 train-loss 0.2127 val-bce 0.2911 (49s)
+[nca] step 600/600 train-loss 0.2156 val-bce 0.2907 (57s)
+[syn-contagion] evolving workers: variant=full
+[es] start fitness 0.420
+[es] gen 5/40 pop-mean 0.394 theta-fitness 0.431 best 0.431 (44s)
+[es] gen 10/40 pop-mean 0.404 theta-fitness 0.416 best 0.431 (78s)
+[es] gen 15/40 pop-mean 0.405 theta-fitness 0.422 best 0.431 (114s)
+[es] gen 20/40 pop-mean 0.412 theta-fitness 0.416 best 0.431 (149s)
+[es] gen 25/40 pop-mean 0.413 theta-fitness 0.447 best 0.447 (183s)
+[es] gen 30/40 pop-mean 0.421 theta-fitness 0.424 best 0.447 (219s)
+[es] gen 35/40 pop-mean 0.426 theta-fitness 0.416 best 0.447 (256s)
+[es] gen 40/40 pop-mean 0.422 theta-fitness 0.429 best 0.447 (293s)
+[syn-contagion] evolving workers: variant=no_scent
+[es] start fitness 0.411
+[es] gen 5/30 pop-mean 0.392 theta-fitness 0.389 best 0.411 (42s)
+[es] gen 10/30 pop-mean 0.401 theta-fitness 0.404 best 0.411 (78s)
+[es] gen 15/30 pop-mean 0.406 theta-fitness 0.420 best 0.420 (113s)
+[es] gen 20/30 pop-mean 0.417 theta-fitness 0.396 best 0.420 (148s)
+[es] gen 25/30 pop-mean 0.414 theta-fitness 0.413 best 0.420 (183s)
+[es] gen 30/30 pop-mean 0.419 theta-fitness 0.427 best 0.427 (218s)
+[syn-contagion] evolving workers: variant=no_plastic
+[es] start fitness 0.404
+[es] gen 5/30 pop-mean 0.396 theta-fitness 0.404 best 0.404 (42s)
+[es] gen 10/30 pop-mean 0.406 theta-fitness 0.398 best 0.404 (76s)
+[es] gen 15/30 pop-mean 0.408 theta-fitness 0.391 best 0.404 (110s)
+[es] gen 20/30 pop-mean 0.415 theta-fitness 0.418 best 0.418 (145s)
+[es] gen 25/30 pop-mean 0.416 theta-fitness 0.431 best 0.431 (179s)
+[es] gen 30/30 pop-mean 0.419 theta-fitness 0.438 best 0.438 (213s)
+[syn-contagion] evolving workers: variant=workers_only
+[es] start fitness 0.409
+[es] gen 5/30 pop-mean 0.407 theta-fitness 0.420 best 0.420 (13s)
+[es] gen 10/30 pop-mean 0.423 theta-fitness 0.429 best 0.429 (19s)
+[es] gen 15/30 pop-mean 0.435 theta-fitness 0.424 best 0.429 (25s)
+[es] gen 20/30 pop-mean 0.432 theta-fitness 0.438 best 0.438 (31s)
+[es] gen 25/30 pop-mean 0.432 theta-fitness 0.429 best 0.438 (37s)
+[es] gen 30/30 pop-mean 0.439 theta-fitness 0.433 best 0.438 (43s)
+[syn-contagion] evolving workers: variant=blind
+[es] start fitness 0.347
+[es] gen 5/30 pop-mean 0.352 theta-fitness 0.389 best 0.389 (41s)
+[es] gen 10/30 pop-mean 0.367 theta-fitness 0.387 best 0.389 (76s)
+[es] gen 15/30 pop-mean 0.376 theta-fitness 0.407 best 0.407 (108s)
+[es] gen 20/30 pop-mean 0.383 theta-fitness 0.404 best 0.407 (142s)
+[es] gen 25/30 pop-mean 0.391 theta-fitness 0.393 best 0.407 (176s)
+[es] gen 30/30 pop-mean 0.395 theta-fitness 0.380 best 0.407 (209s)
+[syn-contagion] evolving workers: variant=no_words
+[es] start fitness 0.400
+[es] gen 5/30 pop-mean 0.394 theta-fitness 0.411 best 0.411 (39s)
+[es] gen 10/30 pop-mean 0.404 theta-fitness 0.400 best 0.411 (72s)
+[es] gen 15/30 pop-mean 0.407 theta-fitness 0.409 best 0.411 (104s)
+[es] gen 20/30 pop-mean 0.409 theta-fitness 0.420 best 0.420 (137s)
+[es] gen 25/30 pop-mean 0.411 theta-fitness 0.413 best 0.420 (170s)
+[es] gen 30/30 pop-mean 0.413 theta-fitness 0.396 best 0.420 (201s)
+[tune] picked: online->online[rev,l2=40,eps=0], cells->cells[off,eps=0], org->org:full[l2=200]
+[contagion] evaluation done in 167s; verdict {'diff': -0.009888888888888883, 'lo': -0.017891666666666667, 'hi': -0.0008861111111110904, 'p_pos': 0.016, 'verdict': 'LOSS'}
+[syn-contagion-rho0.1] fitting baselines on 8 datasets, 40000 nodes
+[syn-contagion-rho0.1] OOF base logits + NCA training
+[nca] step 100/600 train-loss 0.2281 val-bce 0.2743 (10s)
+[nca] step 200/600 train-loss 0.2284 val-bce 0.2741 (19s)
+[nca] step 300/600 train-loss 0.2258 val-bce 0.2790 (29s)
+[nca] step 400/600 train-loss 0.2246 val-bce 0.2787 (39s)
+[nca] step 500/600 train-loss 0.2243 val-bce 0.2763 (48s)
+[nca] step 600/600 train-loss 0.2278 val-bce 0.2795 (58s)
+[syn-contagion-rho0.25] fitting baselines on 8 datasets, 40000 nodes
+[syn-contagion-rho0.25] OOF base logits + NCA training
+[nca] step 100/600 train-loss 0.2215 val-bce 0.2704 (11s)
+[nca] step 200/600 train-loss 0.2214 val-bce 0.2706 (20s)
+[nca] step 300/600 train-loss 0.2195 val-bce 0.2737 (30s)
+[nca] step 400/600 train-loss 0.2178 val-bce 0.2727 (39s)
+[nca] step 500/600 train-loss 0.2180 val-bce 0.2717 (49s)
+[nca] step 600/600 train-loss 0.2212 val-bce 0.2728 (58s)
+[syn-contagion-rho0.5] fitting baselines on 8 datasets, 40000 nodes
+[syn-contagion-rho0.5] OOF base logits + NCA training
+[nca] step 100/600 train-loss 0.2166 val-bce 0.2622 (11s)
+[nca] step 200/600 train-loss 0.2160 val-bce 0.2623 (20s)
+[nca] step 300/600 train-loss 0.2142 val-bce 0.2686 (30s)
+[nca] step 400/600 train-loss 0.2126 val-bce 0.2646 (39s)
+[nca] step 500/600 train-loss 0.2127 val-bce 0.2631 (49s)
+[nca] step 600/600 train-loss 0.2156 val-bce 0.2639 (59s)
+[syn-contagion-rho1.0] fitting baselines on 8 datasets, 40000 nodes
+[syn-contagion-rho1.0] OOF base logits + NCA training
+[nca] step 100/600 train-loss 0.2083 val-bce 0.2471 (11s)
+[nca] step 200/600 train-loss 0.2074 val-bce 0.2469 (20s)
+[nca] step 300/600 train-loss 0.2057 val-bce 0.2529 (30s)
+[nca] step 400/600 train-loss 0.2040 val-bce 0.2483 (41s)
+[nca] step 500/600 train-loss 0.2047 val-bce 0.2483 (50s)
+[nca] step 600/600 train-loss 0.2069 val-bce 0.2491 (60s)
+[tune] picked: online->online[rev,l2=40,eps=0], cells->cells[off,eps=0], org->org:full[off]
+[syn-cascade] fitting baselines on 8 datasets, 40000 nodes
+[syn-cascade] OOF base logits + NCA training
+[nca] step 100/600 train-loss 0.1641 val-bce 0.2379 (11s)
+[nca] step 200/600 train-loss 0.1639 val-bce 0.2381 (20s)
+[nca] step 300/600 train-loss 0.1611 val-bce 0.2371 (28s)
+[nca] step 400/600 train-loss 0.1593 val-bce 0.2399 (38s)
+[nca] step 500/600 train-loss 0.1588 val-bce 0.2378 (48s)
+[nca] step 600/600 train-loss 0.1623 val-bce 0.2368 (57s)
+[syn-cascade] evolving workers: variant=full
+[es] start fitness 0.449
+[es] gen 5/40 pop-mean 0.453 theta-fitness 0.433 best 0.449 (39s)
+[es] gen 10/40 pop-mean 0.456 theta-fitness 0.431 best 0.449 (72s)
+[es] gen 15/40 pop-mean 0.458 theta-fitness 0.447 best 0.449 (107s)
+[es] gen 20/40 pop-mean 0.462 theta-fitness 0.451 best 0.451 (140s)
+[es] gen 25/40 pop-mean 0.465 theta-fitness 0.467 best 0.467 (173s)
+[es] gen 30/40 pop-mean 0.465 theta-fitness 0.473 best 0.473 (206s)
+[es] gen 35/40 pop-mean 0.461 theta-fitness 0.464 best 0.473 (239s)
+[es] gen 40/40 pop-mean 0.465 theta-fitness 0.462 best 0.473 (272s)
+[syn-cascade] evolving workers: variant=no_scent
+[es] start fitness 0.440
+[es] gen 5/30 pop-mean 0.451 theta-fitness 0.453 best 0.453 (40s)
+[es] gen 10/30 pop-mean 0.455 theta-fitness 0.467 best 0.467 (75s)
+[es] gen 15/30 pop-mean 0.456 theta-fitness 0.456 best 0.467 (109s)
+[es] gen 20/30 pop-mean 0.458 theta-fitness 0.480 best 0.480 (144s)
+[es] gen 25/30 pop-mean 0.461 theta-fitness 0.471 best 0.480 (178s)
+[es] gen 30/30 pop-mean 0.463 theta-fitness 0.476 best 0.480 (212s)
+[syn-cascade] evolving workers: variant=no_plastic
+[es] start fitness 0.453
+[es] gen 5/30 pop-mean 0.450 theta-fitness 0.453 best 0.453 (41s)
+[es] gen 10/30 pop-mean 0.449 theta-fitness 0.464 best 0.464 (74s)
+[es] gen 15/30 pop-mean 0.453 theta-fitness 0.456 best 0.464 (108s)
+[es] gen 20/30 pop-mean 0.450 theta-fitness 0.453 best 0.464 (141s)
+[es] gen 25/30 pop-mean 0.456 theta-fitness 0.453 best 0.464 (175s)
+[es] gen 30/30 pop-mean 0.458 theta-fitness 0.458 best 0.464 (208s)
+[syn-cascade] evolving workers: variant=workers_only
+[es] start fitness 0.451
+[es] gen 5/30 pop-mean 0.470 theta-fitness 0.460 best 0.460 (12s)
+[es] gen 10/30 pop-mean 0.472 theta-fitness 0.476 best 0.476 (19s)
+[es] gen 15/30 pop-mean 0.480 theta-fitness 0.498 best 0.498 (25s)
+[es] gen 20/30 pop-mean 0.472 theta-fitness 0.476 best 0.498 (31s)
+[es] gen 25/30 pop-mean 0.470 theta-fitness 0.467 best 0.498 (37s)
+[es] gen 30/30 pop-mean 0.481 theta-fitness 0.471 best 0.498 (43s)
+[syn-cascade] evolving workers: variant=blind
+[es] start fitness 0.427
+[es] gen 5/30 pop-mean 0.427 theta-fitness 0.449 best 0.449 (40s)
+[es] gen 10/30 pop-mean 0.435 theta-fitness 0.433 best 0.449 (75s)
+[es] gen 15/30 pop-mean 0.444 theta-fitness 0.467 best 0.467 (110s)
+[es] gen 20/30 pop-mean 0.450 theta-fitness 0.462 best 0.467 (144s)
+[es] gen 25/30 pop-mean 0.455 theta-fitness 0.467 best 0.467 (178s)
+[es] gen 30/30 pop-mean 0.457 theta-fitness 0.471 best 0.471 (212s)
+[syn-cascade] evolving workers: variant=no_words
+[es] start fitness 0.442
+[es] gen 5/30 pop-mean 0.449 theta-fitness 0.427 best 0.442 (39s)
+[es] gen 10/30 pop-mean 0.457 theta-fitness 0.467 best 0.467 (73s)
+[es] gen 15/30 pop-mean 0.462 theta-fitness 0.476 best 0.476 (105s)
+[es] gen 20/30 pop-mean 0.458 theta-fitness 0.469 best 0.476 (138s)
+[es] gen 25/30 pop-mean 0.456 theta-fitness 0.447 best 0.476 (171s)
+[es] gen 30/30 pop-mean 0.465 theta-fitness 0.462 best 0.476 (203s)
+[tune] picked: online->online[rev,l2=200,eps=0], cells->cells[off,eps=0], org->org:full[off]
+[cascade] evaluation done in 185s; verdict {'diff': -0.0015555555555555683, 'lo': -0.011669444444444474, 'hi': 0.007777777777777789, 'p_pos': 0.383, 'verdict': 'TIE'}
+[syn-lexical_nolang] fitting baselines on 8 datasets, 40000 nodes
+[syn-lexical_nolang] OOF base logits + NCA training
+[nca] step 100/600 train-loss 0.2142 val-bce 0.3040 (11s)
+[nca] step 200/600 train-loss 0.2159 val-bce 0.3013 (22s)
+[nca] step 300/600 train-loss 0.2131 val-bce 0.3023 (33s)
+[nca] step 400/600 train-loss 0.2121 val-bce 0.3034 (43s)
+[nca] step 500/600 train-loss 0.2123 val-bce 0.3007 (53s)
+[nca] step 600/600 train-loss 0.2152 val-bce 0.3008 (64s)
+[syn-lexical_nolang] evolving workers: variant=full
+[es] start fitness 0.427
+[es] gen 5/40 pop-mean 0.412 theta-fitness 0.416 best 0.427 (45s)
+[es] gen 10/40 pop-mean 0.420 theta-fitness 0.424 best 0.427 (81s)
+[es] gen 15/40 pop-mean 0.426 theta-fitness 0.458 best 0.458 (116s)
+[es] gen 20/40 pop-mean 0.431 theta-fitness 0.436 best 0.458 (151s)
+[es] gen 25/40 pop-mean 0.443 theta-fitness 0.442 best 0.458 (190s)
+[es] gen 30/40 pop-mean 0.439 theta-fitness 0.431 best 0.458 (231s)
+[es] gen 35/40 pop-mean 0.436 theta-fitness 0.456 best 0.458 (270s)
+[es] gen 40/40 pop-mean 0.439 theta-fitness 0.444 best 0.458 (306s)
+[syn-lexical_nolang] evolving workers: variant=no_scent
+[es] start fitness 0.411
+[es] gen 5/30 pop-mean 0.419 theta-fitness 0.413 best 0.413 (44s)
+[es] gen 10/30 pop-mean 0.422 theta-fitness 0.420 best 0.420 (82s)
+[es] gen 15/30 pop-mean 0.429 theta-fitness 0.444 best 0.444 (118s)
+[es] gen 20/30 pop-mean 0.433 theta-fitness 0.429 best 0.444 (153s)
+[es] gen 25/30 pop-mean 0.445 theta-fitness 0.433 best 0.444 (190s)
+[es] gen 30/30 pop-mean 0.438 theta-fitness 0.438 best 0.444 (225s)
+[syn-lexical_nolang] evolving workers: variant=no_plastic
+[es] start fitness 0.424
+[es] gen 5/30 pop-mean 0.416 theta-fitness 0.404 best 0.424 (41s)
+[es] gen 10/30 pop-mean 0.422 theta-fitness 0.436 best 0.436 (75s)
+[es] gen 15/30 pop-mean 0.428 theta-fitness 0.433 best 0.436 (110s)
+[es] gen 20/30 pop-mean 0.427 theta-fitness 0.442 best 0.442 (144s)
+[es] gen 25/30 pop-mean 0.440 theta-fitness 0.436 best 0.442 (178s)
+[es] gen 30/30 pop-mean 0.438 theta-fitness 0.449 best 0.449 (211s)
+[syn-lexical_nolang] evolving workers: variant=workers_only
+[es] start fitness 0.438
+[es] gen 5/30 pop-mean 0.450 theta-fitness 0.449 best 0.449 (12s)
+[es] gen 10/30 pop-mean 0.449 theta-fitness 0.467 best 0.467 (18s)
+[es] gen 15/30 pop-mean 0.463 theta-fitness 0.458 best 0.467 (25s)
+[es] gen 20/30 pop-mean 0.462 theta-fitness 0.460 best 0.467 (31s)
+[es] gen 25/30 pop-mean 0.462 theta-fitness 0.453 best 0.467 (37s)
+[es] gen 30/30 pop-mean 0.476 theta-fitness 0.464 best 0.467 (44s)
+[syn-lexical_nolang] evolving workers: variant=blind
+[es] start fitness 0.380
+[es] gen 5/30 pop-mean 0.377 theta-fitness 0.398 best 0.398 (42s)
+[es] gen 10/30 pop-mean 0.395 theta-fitness 0.387 best 0.398 (79s)
+[es] gen 15/30 pop-mean 0.420 theta-fitness 0.418 best 0.418 (115s)
+[es] gen 20/30 pop-mean 0.421 theta-fitness 0.424 best 0.424 (150s)
+[es] gen 25/30 pop-mean 0.436 theta-fitness 0.433 best 0.433 (186s)
+[es] gen 30/30 pop-mean 0.426 theta-fitness 0.422 best 0.433 (221s)
+[syn-lexical_nolang] evolving workers: variant=no_words
+[es] start fitness 0.398
+[es] gen 5/30 pop-mean 0.424 theta-fitness 0.416 best 0.416 (40s)
+[es] gen 10/30 pop-mean 0.421 theta-fitness 0.418 best 0.418 (72s)
+[es] gen 15/30 pop-mean 0.435 theta-fitness 0.431 best 0.431 (105s)
+[es] gen 20/30 pop-mean 0.426 theta-fitness 0.431 best 0.431 (137s)
+[es] gen 25/30 pop-mean 0.427 theta-fitness 0.433 best 0.433 (171s)
+[es] gen 30/30 pop-mean 0.446 theta-fitness 0.449 best 0.449 (206s)
+[tune] picked: online->online[rev,off,eps=0], cells->cells[off,eps=0], org->org:full[off]
+[lexical] evaluation done in 174s; verdict {'diff': -0.010444444444444461, 'lo': -0.019000000000000017, 'hi': -0.0025555555555555687, 'p_pos': 0.0045, 'verdict': 'LOSS'}
+[syn-lexical_lang] fitting baselines on 8 datasets, 40000 nodes
+[syn-lexical_lang] OOF base logits + NCA training
+[nca] step 100/600 train-loss 0.2132 val-bce 0.2807 (12s)
+[nca] step 200/600 train-loss 0.2074 val-bce 0.2811 (22s)
+[nca] step 300/600 train-loss 0.2062 val-bce 0.2819 (32s)
+[nca] step 400/600 train-loss 0.2039 val-bce 0.2836 (42s)
+[nca] step 500/600 train-loss 0.2042 val-bce 0.2830 (53s)
+[nca] step 600/600 train-loss 0.1999 val-bce 0.2843 (63s)
+[syn-lexical_lang] evolving workers: variant=full
+[es] start fitness 0.529
+[es] gen 5/40 pop-mean 0.524 theta-fitness 0.524 best 0.529 (47s)
+[es] gen 10/40 pop-mean 0.535 theta-fitness 0.547 best 0.547 (84s)
+[es] gen 15/40 pop-mean 0.542 theta-fitness 0.533 best 0.547 (120s)
+[es] gen 20/40 pop-mean 0.546 theta-fitness 0.540 best 0.547 (156s)
+[es] gen 25/40 pop-mean 0.548 theta-fitness 0.553 best 0.553 (196s)
+[es] gen 30/40 pop-mean 0.554 theta-fitness 0.564 best 0.564 (234s)
+[es] gen 35/40 pop-mean 0.558 theta-fitness 0.582 best 0.582 (271s)
+[es] gen 40/40 pop-mean 0.554 theta-fitness 0.567 best 0.582 (310s)
+[syn-lexical_lang] evolving workers: variant=no_scent
+[es] start fitness 0.507
+[es] gen 5/30 pop-mean 0.515 theta-fitness 0.520 best 0.520 (44s)
+[es] gen 10/30 pop-mean 0.528 theta-fitness 0.533 best 0.533 (81s)
+[es] gen 15/30 pop-mean 0.535 theta-fitness 0.549 best 0.549 (118s)
+[es] gen 20/30 pop-mean 0.541 theta-fitness 0.536 best 0.549 (155s)
+[es] gen 25/30 pop-mean 0.542 theta-fitness 0.553 best 0.553 (193s)
+[es] gen 30/30 pop-mean 0.544 theta-fitness 0.544 best 0.553 (233s)
+[syn-lexical_lang] evolving workers: variant=no_plastic
+[es] start fitness 0.518
+[es] gen 5/30 pop-mean 0.521 theta-fitness 0.533 best 0.533 (42s)
+[es] gen 10/30 pop-mean 0.532 theta-fitness 0.549 best 0.549 (79s)
+[es] gen 15/30 pop-mean 0.537 theta-fitness 0.544 best 0.549 (116s)
+[es] gen 20/30 pop-mean 0.544 theta-fitness 0.536 best 0.549 (151s)
+[es] gen 25/30 pop-mean 0.548 theta-fitness 0.556 best 0.556 (187s)
+[es] gen 30/30 pop-mean 0.551 theta-fitness 0.538 best 0.556 (223s)
+[syn-lexical_lang] evolving workers: variant=workers_only
+[es] start fitness 0.536
+[es] gen 5/30 pop-mean 0.527 theta-fitness 0.540 best 0.540 (14s)
+[es] gen 10/30 pop-mean 0.535 theta-fitness 0.558 best 0.558 (21s)
+[es] gen 15/30 pop-mean 0.541 theta-fitness 0.556 best 0.558 (28s)
+[es] gen 20/30 pop-mean 0.544 theta-fitness 0.556 best 0.558 (35s)
+[es] gen 25/30 pop-mean 0.547 theta-fitness 0.549 best 0.558 (42s)
+[es] gen 30/30 pop-mean 0.552 theta-fitness 0.542 best 0.558 (49s)
+[syn-lexical_lang] evolving workers: variant=blind
+[es] start fitness 0.480
+[es] gen 5/30 pop-mean 0.464 theta-fitness 0.504 best 0.504 (44s)
+[es] gen 10/30 pop-mean 0.500 theta-fitness 0.533 best 0.533 (79s)
+[es] gen 15/30 pop-mean 0.506 theta-fitness 0.518 best 0.533 (114s)
+[es] gen 20/30 pop-mean 0.513 theta-fitness 0.522 best 0.533 (151s)
+[es] gen 25/30 pop-mean 0.523 theta-fitness 0.527 best 0.533 (186s)
+[es] gen 30/30 pop-mean 0.526 theta-fitness 0.524 best 0.533 (222s)
+[syn-lexical_lang] evolving workers: variant=no_words
+[es] start fitness 0.549
+[es] gen 5/30 pop-mean 0.524 theta-fitness 0.520 best 0.549 (43s)
+[es] gen 10/30 pop-mean 0.532 theta-fitness 0.527 best 0.549 (80s)
+[es] gen 15/30 pop-mean 0.537 theta-fitness 0.558 best 0.558 (118s)
+[es] gen 20/30 pop-mean 0.542 theta-fitness 0.540 best 0.558 (157s)
+[es] gen 25/30 pop-mean 0.543 theta-fitness 0.540 best 0.558 (196s)
+[es] gen 30/30 pop-mean 0.545 theta-fitness 0.544 best 0.558 (237s)
+[tune] picked: online->online[rev,l2=40,eps=0], cells->cells[l2=200,eps=0], org->org:full[off]
+[lexical] evaluation done in 198s; verdict {'diff': -0.0020000000000000183, 'lo': -0.012333333333333352, 'hi': 0.006888888888888852, 'p_pos': 0.35525, 'verdict': 'TIE'}
+[real] loaded cached dataset: 399643 places
+[real] language layer: {'features': 48, 'edges': 0} -> 98 features
+[real] split: {'n_train': 236394, 'n_chunks': 23, 'n_val': 102986, 'n_test': 60263, 'n_val_chunks': 7, 'n_test_pools': 7, 'test_pool_sizes': [8144, 8816, 13629, 8338, 7871, 7757, 5708], 'base_rate_train': 0.12270616005482372, 'base_rate_test': 0.1132701657733601, 'base_rate_gone_test': 0.04555033768647429}
+[real] fitting baselines on 23 datasets, 236394 nodes
+[real] OOF base logits + NCA training
+[nca] step 100/500 train-loss 0.2008 val-bce 0.3051 (22s)
+[nca] step 200/500 train-loss 0.2108 val-bce 0.3038 (38s)
+[nca] step 300/500 train-loss 0.2033 val-bce 0.3035 (53s)
+[nca] step 400/500 train-loss 0.2167 val-bce 0.3045 (71s)
+[nca] step 500/500 train-loss 0.2061 val-bce 0.3036 (88s)
+[real] evolving workers: variant=full
+[es] start fitness 0.687
+[es] gen 5/40 pop-mean 0.696 theta-fitness 0.711 best 0.711 (95s)
+[es] gen 10/40 pop-mean 0.727 theta-fitness 0.744 best 0.744 (179s)
+[es] gen 15/40 pop-mean 0.724 theta-fitness 0.740 best 0.744 (251s)
+[es] gen 20/40 pop-mean 0.729 theta-fitness 0.759 best 0.759 (328s)
+[es] gen 25/40 pop-mean 0.754 theta-fitness 0.759 best 0.759 (404s)
+[es] gen 30/40 pop-mean 0.773 theta-fitness 0.750 best 0.759 (478s)
+[es] gen 35/40 pop-mean 0.736 theta-fitness 0.761 best 0.761 (550s)
+[es] gen 40/40 pop-mean 0.755 theta-fitness 0.752 best 0.761 (621s)
+[real] evolving workers: variant=no_scent
+[es] start fitness 0.691
+[es] gen 5/30 pop-mean 0.696 theta-fitness 0.720 best 0.720 (87s)
+[es] gen 10/30 pop-mean 0.730 theta-fitness 0.740 best 0.740 (166s)
+[es] gen 15/30 pop-mean 0.727 theta-fitness 0.746 best 0.746 (241s)
+[es] gen 20/30 pop-mean 0.729 theta-fitness 0.757 best 0.757 (321s)
+[es] gen 25/30 pop-mean 0.752 theta-fitness 0.739 best 0.757 (394s)
+[es] gen 30/30 pop-mean 0.767 theta-fitness 0.750 best 0.757 (468s)
+[real] evolving workers: variant=no_plastic
+[es] start fitness 0.697
+[es] gen 5/30 pop-mean 0.695 theta-fitness 0.718 best 0.718 (81s)
+[es] gen 10/30 pop-mean 0.731 theta-fitness 0.745 best 0.745 (157s)
+[es] gen 15/30 pop-mean 0.725 theta-fitness 0.753 best 0.753 (229s)
+[es] gen 20/30 pop-mean 0.728 theta-fitness 0.742 best 0.753 (305s)
+[es] gen 25/30 pop-mean 0.750 theta-fitness 0.742 best 0.753 (374s)
+[es] gen 30/30 pop-mean 0.768 theta-fitness 0.748 best 0.753 (447s)
+[real] evolving workers: variant=workers_only
+[es] start fitness 0.697
+[es] gen 5/30 pop-mean 0.711 theta-fitness 0.741 best 0.741 (20s)
+[es] gen 10/30 pop-mean 0.718 theta-fitness 0.743 best 0.743 (32s)
+[es] gen 15/30 pop-mean 0.750 theta-fitness 0.750 best 0.750 (42s)
+[es] gen 20/30 pop-mean 0.729 theta-fitness 0.752 best 0.752 (53s)
+[es] gen 25/30 pop-mean 0.746 theta-fitness 0.753 best 0.753 (63s)
+[es] gen 30/30 pop-mean 0.711 theta-fitness 0.753 best 0.753 (73s)
+[real] evolving workers: variant=blind
+[es] start fitness 0.639
+[es] gen 5/30 pop-mean 0.610 theta-fitness 0.662 best 0.662 (83s)
+[es] gen 10/30 pop-mean 0.663 theta-fitness 0.695 best 0.695 (156s)
+[es] gen 15/30 pop-mean 0.668 theta-fitness 0.690 best 0.695 (224s)
+[es] gen 20/30 pop-mean 0.688 theta-fitness 0.708 best 0.708 (296s)
+[es] gen 25/30 pop-mean 0.712 theta-fitness 0.730 best 0.730 (362s)
+[es] gen 30/30 pop-mean 0.731 theta-fitness 0.734 best 0.734 (432s)
+[real] evolving workers: variant=no_words
+[es] start fitness 0.709
+[es] gen 5/30 pop-mean 0.702 theta-fitness 0.711 best 0.711 (80s)
+[es] gen 10/30 pop-mean 0.709 theta-fitness 0.731 best 0.731 (151s)
+[es] gen 15/30 pop-mean 0.741 theta-fitness 0.742 best 0.742 (219s)
+[es] gen 20/30 pop-mean 0.724 theta-fitness 0.751 best 0.751 (284s)
+[es] gen 25/30 pop-mean 0.743 theta-fitness 0.744 best 0.751 (350s)
+[es] gen 30/30 pop-mean 0.706 theta-fitness 0.747 best 0.751 (416s)
+[tune] picked: online->online[rev,l2=200,eps=0], cells->cells[off,eps=0], org->org:full[off]
+[speech] 16 worker sentences, 16 words in use
+[e5] timing: {"synthetic (5,000 entities)": {"n": 5000, "gbdt_graph_score_s": 0.030244827270507812, "nca_forward_s": 0.019232511520385742, "game_s": {"random": 0.0008759498596191406, "age": 0.0009281635284423828, "static_node": 0.001306295394897461, "static_graph": 0.0009307861328125, "online[rev,l2=40,eps=0]": 
+[done] total 10537s -> lkm_out_final/report.html

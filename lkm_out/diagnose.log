@@ -1,0 +1,16 @@
+[real] loaded cached dataset: 399643 places
+[real] split: {'n_train': 236394, 'n_chunks': 23, 'n_val': 102986, 'n_test': 60263, 'n_val_chunks': 7, 'n_test_pools': 7, 'test_pool_sizes': [8144, 8816, 13629, 8338, 7871, 7757, 5708], 'base_rate_train': 0.12270616005482372, 'base_rate_test': 0.1132701657733601, 'base_rate_gone_test': 0.04555033768647429}
+[diag] train chunks 23, eval chunks 6, eval nodes 90986, base rate 0.1365
+[diag] curve 2 {'auc': 0.7553957227921426, 'ap': 0.3780098064531736, 'p@3%': 0.6108464639061928}
+[diag] curve 5 {'auc': 0.7651220732165516, 'ap': 0.3905169648743057, 'p@3%': 0.6178087211432759}
+[diag] curve 11 {'auc': 0.7772309366448279, 'ap': 0.4207488938000495, 'p@3%': 0.6636130450714548}
+[diag] curve 23 {'auc': 0.7800686903808154, 'ap': 0.4289042199817709, 'p@3%': 0.6812019054598755}
+[diag] node-only {'auc': 0.7690965281887713, 'ap': 0.3902433677729654, 'p@3%': 0.6057163796262367} bigger GBDT {'auc': 0.7819247311954038, 'ap': 0.43055374242766, 'p@3%': 0.6742396482227923}
+[diag] cells C16 H32 T8 (the one we used) {'auc': 0.7874, 'ap': 0.4437, 'p@3%': 0.6951, 'params': 3505, 'seconds': 84} dAUC vs base [0.0073, 0.0059, 0.0086]
+[diag] T=1: almost no communication {'auc': 0.7845, 'ap': 0.4371, 'p@3%': 0.6911, 'params': 3505, 'seconds': 40} dAUC vs base [0.0044, 0.0036, 0.0051]
+[diag] T=16: longer communication {'auc': 0.7866, 'ap': 0.4442, 'p@3%': 0.6992, 'params': 3505, 'seconds': 124} dAUC vs base [0.0065, 0.0053, 0.0076]
+[diag] wide: C48 H96 T8 {'auc': 0.7875, 'ap': 0.4446, 'p@3%': 0.6981, 'params': 25873, 'seconds': 182} dAUC vs base [0.0074, 0.0061, 0.0086]
+[diag] big: C64 H128 T12 {'auc': 0.7872, 'ap': 0.4443, 'p@3%': 0.7032, 'params': 44737, 'seconds': 350} dAUC vs base [0.0071, 0.006, 0.0082]
+[diag] stand-alone cells (no baseline logit) C16 H32 T8 {'auc': 0.7516, 'ap': 0.372, 'p@3%': 0.6266, 'params': 3505, 'seconds': 75} dAUC vs base [-0.0284, -0.0313, -0.0259]
+[diag] stand-alone big (no baseline logit) C64 H128 T12 {'auc': 0.77, 'ap': 0.397, 'p@3%': 0.62, 'params': 44737, 'seconds': 334} dAUC vs base [-0.01, -0.0126, -0.0075]
+[diag] done in 1287s
