@@ -10,7 +10,7 @@ used by the reference implementation that produced the results in Part 8.
 
 You are asked to do one or both of:
 
-**Task A: BUILD** the organism exactly as specified (Parts 1 to 7), then run the acceptance tests (Part 9) and the
+**Task A: BUILD** the organism exactly as specified (Parts 1 to 7; Part 13 if it must run as a persistent service), then run the acceptance tests (Part 9) and the
 reference experiment (Part 8) to confirm that your build behaves like the reference.
 
 **Task B: IMPROVE** the organism using the improvement protocol (Part 10) to produce better variants, under the fixed
@@ -868,6 +868,66 @@ experiments.jsonl (Part 10.5)       DEVIATIONS.md
 ### 12.5 Dependency list
 
 `numpy`, `scipy`, `scikit-learn`, `jax` (CPU), `onnxruntime` and `tokenizers` (text reader, optional), `faiss-cpu` (neighbour search, optional), `matplotlib` (report charts), `pyarrow`/`pandas` (only for real-data loaders). Python 3.11–3.13.
+
+---
+
+## PART 13. RUNNING THE ORGANISM FOR REAL: THE HABITAT (persistent service)
+
+Parts 1 to 12 describe the organism inside a finite game. A real deployment needs it to **live**: start with the machine, keep its
+memory, watch a world that changes, take answers whenever they arrive. This part specifies that runtime. The reference implementation is a
+package `live/` of about 900 lines (store, body, source, verifiers, habitat, serve, bootstrap, CLI, self-test) plus deployment files.
+
+### 13.1 Lifecycle
+
+`boot` (take a single-instance file lock, open the database, load the models, restore the newest body snapshot if one exists, record a `boot` event)
+→ repeat `cycle` every `interval` (default 1 day) → `shutdown` on SIGTERM/SIGINT (finish the current cycle, save, release the lock).
+A crash at any moment (including SIGKILL) must be survivable: the body snapshot and the queue rows of a cycle are committed in **one SQLite transaction**
+(WAL, synchronous=FULL). Start with the machine: container with `restart: unless-stopped`, or a systemd unit with `Restart=always`, `WantedBy=multi-user.target`.
+
+### 13.2 What persists (everything that makes the individual)
+
+Genomes, brain states `h`, fast weights `Wf`, energy, last reward, **unique ids of individuals**, the ancestral genome, the random generator state, scent (sparse, keyed by
+entity id), readout adaptation, counters and logs (trimmed), plus the queue of proposed checks with their context. Workers live on **entity ids**, not array positions,
+so the world may change between cycles: positions are re-mapped by id on every cycle; entities that disappeared relocate their workers randomly.
+
+### 13.3 The cycle (order matters)
+
+1. **Outside answers**: poll an optional verifier; read `inbox/*.csv` (`entity_id,label`), each file once.
+2. **Sense**: ask the source for its `version()`; only if it changed, rebuild the Dataset and recompute the baseline logits (trees). Labels are never provided by sources (zeros).
+3. **Body**: if no body exists, be born (`reset` from the ancestral genome, population `max(8, 4×budget)`); else attach to the new snapshot.
+4. **Time passes**: energy ×0.9; scent diffuses and fades (4.5.9); answers are integrated asynchronously (13.4).
+5. **Knowledge**: `verified` = labels answered within `label_ttl_days` (default 30; the world moves on); `blocked` = entities with a pending check; pending checks older than `pending_ttl_days` (default 7) expire without reward.
+6. **Learn and evolve**: relax the cell field with all reveals, adapt the readout (4.5.9), replace the weakest 15 percent of workers by mutated copies of the strongest (4.5.10); replaced individuals get **new unique ids**.
+7. **Choose**: budget `B` per cycle (default 3 percent / 8 = 0.375 percent of entities, or a fixed number); allowance = `3×B − pending`; the organism proposes `min(B, allowance)` checks, never blocked or recently verified entities. The `blocked` set must be honoured in the descriptors, the risk-field sampling and the inspection mask.
+8. **Explain**: each proposal carries a plain-sentence reason from the narrator (4.7).
+9. **Commit** in one transaction: queue rows (entity id, risk, reason, worker index, worker uid, context), integration/expiry status updates, the body snapshot (keep the last 3), counters, a `cycle` event. Then emit proposals to an `outbox.jsonl` file and an optional webhook (best effort; the queue is the source of truth).
+
+### 13.4 Rewards that arrive late (asynchronous economy)
+
+Each proposal stores its **context** (the worker's final brain state and input vector at the moment it chose). When an answer arrives, possibly cycles later and possibly never:
+* if the worker slot still holds the **same uid**, then `energy += r_hit` or `r_miss`, `last_r = r`, and the plasticity update (4.5.8) is applied with the stored context; otherwise the reward is dropped (the individual is dead);
+* scent is deposited at the entity regardless; answers with no matching proposal are stored as labels (so the world's knowledge grows) but credit nobody;
+* answers are idempotent: a second answer for an item that is no longer pending does not double count.
+
+### 13.5 Interface and safety
+
+HTTP (standard library): `GET /` dashboard, `/health`, `/status`, `/queue`, `/say`, `/events`; `POST /answers` (`label` must be 0 or 1), `/pause`, `/resume`. Kill switch: a file named `PAUSE` in the home directory pauses cycles. If an environment token is set, every call except `/health` requires `Authorization: Bearer <token>` or `?token=`; **listening on a non-local address without a token must be refused**. A `dry_run` flag proposes and records but emits nothing. The organism only proposes; it never modifies the data it watches.
+
+### 13.6 Sources and verifiers
+
+A source implements `version()`, `snapshot() -> (Dataset, ids)` and optionally `url_of(id)`. Provide a generic CSV source (id, numeric features standardised by a scaler fixed at bootstrap, optional lat/lon for spatial neighbours, group columns for other relations, an age column) and an in-memory source for tests. Verifiers implement `poll(habitat, now) -> [(id, label, source)]`: a replay verifier (answers from known outcomes after a delay; **a simulation, must be labelled as such everywhere it is shown**) and an optional web-liveness verifier (a proxy signal).
+
+### 13.7 Bootstrapping the first brain
+
+Fit the trees, the cells and the ancestral genome (Parts 4.2, 4.4, 4.6) on at least two labelled historical snapshots (the last one held out for evolving the genome); store them as the habitat's models; fix the feature spec and scaler so later snapshots are encoded identically.
+
+### 13.8 Acceptance tests (in addition to Part 9)
+
+Memory survives a restart (same individuals, cycle counter, boots counter); snapshot export/restore is exact (arrays and rng state); late, duplicate and unsolicited answers behave as 13.4; a dead worker is not credited; unanswered checks expire; the world may lose entities between cycles without error; the pause file stops proposals; a second instance on the same home is refused; inbox files are read once; labels expire with the TTL; the HTTP API works, enforces the token, rejects labels other than 0/1, and refuses public binding without a token; dry-run emits nothing; an aborted transaction leaves no partial rows; **a self-test starts the organism as a separate process, kills it with SIGKILL, wakes it, and checks that it resumes at the next cycle with a consistent queue and carries on.**
+
+### 13.9 What the reference run showed (honest)
+
+On a public places pool (8,144 entities, simulated answers from two public releases) the habitat lived 28 cycles, survived a SIGKILL at cycle 17, resumed, and was stopped cleanly. Of 837 proposed checks, 34.5 percent were real problems against a 9.9 percent base rate; ranking by the trees alone over the same number of checks gave 36.9 percent. **The living organism did not beat a static ranking**, which matches Part 8. The value delivered by the habitat is the persistent, explainable, auditable verification loop; any gain over a static ranking must be measured prospectively on the deployment's own data (grade every proposed check against what really happened).
 
 ---
 

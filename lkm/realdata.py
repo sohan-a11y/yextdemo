@@ -242,8 +242,11 @@ def build_real(data_dir="lkm_data", seed=0, chunk_target=8000, cache=True, log=p
     test = full.subset(np.where(split == 2)[0], name="test")
     va_chunks = _chunks(sorted(va_b), nb, 10000)
     te_chunks = _chunks(sorted(te_b), nb, 7500)
-    val_chunks = [full.subset(np.where(np.isin(blk, ch))[0], name=f"val-chunk{i}") for i, ch in enumerate(va_chunks)]
-    test_pools = [full.subset(np.where(np.isin(blk, ch))[0], name=f"test-pool{i}") for i, ch in enumerate(te_chunks)]
+    def _with_idx(ds, idx):
+        ds.meta["idx"] = np.asarray(idx)
+        return ds
+    val_chunks = [_with_idx(full.subset(ix, name=f"val-chunk{i}"), ix) for i, ix in enumerate(np.where(np.isin(blk, ch))[0] for ch in va_chunks)]
+    test_pools = [_with_idx(full.subset(ix, name=f"test-pool{i}"), ix) for i, ix in enumerate(np.where(np.isin(blk, ch))[0] for ch in te_chunks)]
     info = {"n_train": int(sum(d.n for d in train)), "n_chunks": len(train), "n_val": val.n, "n_test": test.n, "n_val_chunks": len(val_chunks),
             "n_test_pools": len(test_pools), "test_pool_sizes": [d.n for d in test_pools],
             "base_rate_train": float(np.concatenate([d.y for d in train]).mean()), "base_rate_test": float(test.y.mean()),

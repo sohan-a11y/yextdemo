@@ -1,0 +1,9 @@
+numpy
+scipy
+scikit-learn
+pandas
+pyarrow
+jax[cpu]
+matplotlib
+onnxruntime
+tokenizers

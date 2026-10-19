@@ -77,6 +77,12 @@ class Narrator:
         self.overall = float(ds.y.mean())
         self.text = ds.text
         self._dic = None
+        self._known = None
+        self._y = None
+
+    def set_labels(self, y, known):
+        """Live use: labels exist only for verified entities. Rates are then computed on those only."""
+        self._y, self._known = np.asarray(y, float), np.asarray(known, bool)
 
     # ------------------------------------------------------------------ vocabulary
     def dictionary(self, min_share=0.002):
@@ -98,8 +104,15 @@ class Narrator:
             if self.text is not None:
                 pick = rng.choice(np.where(m)[0], min(3, n), replace=False)
                 ex = [str(self.text[i]) for i in pick]
-            out.append({"word": w, "n": n, "share": n / len(m), "change_rate": float(self.ds.y[m].mean()),
-                        "lift": float(self.ds.y[m].mean() / max(self.overall, 1e-9)), "mean_risk": float(1 / (1 + np.exp(-self.base[m].mean()))),
+            if self._known is None:
+                yy, mm, overall = self.ds.y, m, self.overall
+            else:
+                yy, mm = self._y, m & self._known
+                overall = float(self._y[self._known].mean()) if self._known.any() else float("nan")
+            rate = float(yy[mm].mean()) if mm.any() else float("nan")
+            out.append({"word": w, "n": n, "share": n / len(m), "change_rate": rate,
+                        "lift": rate / max(overall, 1e-9) if rate == rate and overall == overall else float("nan"),
+                        "mean_risk": float(1 / (1 + np.exp(-self.base[m].mean()))),
                         "traits": traits, "examples": ex})
         return out
 
@@ -108,8 +121,9 @@ class Narrator:
         if not e.get("n"):
             return f"word {w}: unused"
         tr = "; ".join(e["traits"]) if e["traits"] else "no single trait stands out"
-        return (f"word {w} ({100*e['share']:.1f}% of places, {100*e['change_rate']:.0f}% of them change, "
-                f"{e['lift']:.1f}x the city rate): {tr}")
+        rate = (f", {100*e['change_rate']:.0f}% of them change, {e['lift']:.1f}x the overall rate"
+                if e["change_rate"] == e["change_rate"] else "")
+        return f"word {w} ({100*e['share']:.1f}% of places{rate}): {tr}"
 
     # ------------------------------------------------------------------ one place
     def reasons(self, i, k=3):

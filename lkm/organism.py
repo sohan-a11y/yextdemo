@@ -122,6 +122,12 @@ class Organism:
     def stats(self):
         return {k: [float(x) for x in v] for k, v in self.log.items()}
 
+    @staticmethod
+    def _blocked(env):
+        """Entities that must not be picked now (a check is already pending). Absent in the simulated game."""
+        b = getattr(env, "blocked", None)
+        return np.zeros(len(env.verified), bool) if b is None else b
+
     # ------------------------------------------------------------------ mesh perception
     def _cell_logit(self, env):
         if not (self.use_cells and self.P is not None):
@@ -141,7 +147,7 @@ class Organism:
         d[:, 1] = self.pb
         if self.use_scent:
             d[:, 2] = np.minimum(self.hit * 3.0, 3.0); d[:, 3] = np.minimum(self.vis, 3.0)
-        d[:, 4] = (env.verified == 2); d[:, 5] = (env.verified == 1)
+        d[:, 4] = (env.verified == 2); d[:, 5] = (env.verified == 1) | self._blocked(env)
         d[:, 6] = self.age_n; d[:, 7] = self.deg_n
         d[:, 8] = self.G.Aun @ d[:, 0]
         if self.use_scent:
@@ -154,7 +160,7 @@ class Organism:
         """Shared 'risk chemistry': a sampling distribution over unverified nodes, proportional to exp(beta * logit)."""
         zz = np.clip(np.asarray(z, np.float64), -8, 8)
         w = np.exp(self.field_beta * (zz - zz.max()))
-        w = np.where(env.verified == 0, w, 0.0)
+        w = np.where((env.verified == 0) & ~self._blocked(env), w, 0.0)
         c = np.cumsum(w)
         self._cdf = c / max(c[-1], 1e-300)
 
@@ -228,7 +234,7 @@ class Organism:
         h_aug = self._think(pr, d_all, rf)
         score = np.einsum("wd,wd->w", pr["wi"], h_aug)
         score = score + np.einsum("wd,wd->w", pr["wd"], d_all[self.pos])
-        ok = env.verified[self.pos] == 0
+        ok = (env.verified[self.pos] == 0) & ~self._blocked(env)[self.pos]
         score = np.where(ok, score, -1e9)
         order = np.lexsort((-score, self.pos))                       # best worker per node
         first = np.ones(len(order), bool); first[1:] = self.pos[order][1:] != self.pos[order][:-1]

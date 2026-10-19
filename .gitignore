@@ -9,3 +9,5 @@ __pycache__/
 lkm_out_final/cache/
 lkm_out_final_wordsonly/cache/
 lkm_out_final_smoke/
+
+organism_selftest/

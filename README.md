@@ -100,3 +100,7 @@ That is a research question to measure against simple rule-based and centralized
 ## Attribution
 
 Created by Sohan Merugu as an independent concept prototype. Not affiliated with, endorsed by, or an official product of Yext.
+
+## Running the organism as a living service (`lkm/live/`)
+
+The organism can live in a machine: it starts at boot, keeps its memory in a crash-safe database, watches a data source, proposes what to check next, learns from the answers that come back, and shows a phone-friendly dashboard. See `lkm/live/LIVE.md`; deployment files are in `deploy/` (Docker, systemd). `python -m lkm.live selftest` proves it survives being killed.
