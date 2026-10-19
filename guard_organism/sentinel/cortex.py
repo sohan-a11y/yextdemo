@@ -30,11 +30,17 @@ def unit(v):
 
 # ============================================================================================ the borrowed encoder
 def default_model_dir():
-    """Where the language model is installed (python -m sentinel fetch-model). The running Sentinel never downloads anything."""
+    """Where the language model is installed (python -m sentinel fetch-model). The running Sentinel never downloads anything.
+    Order: $SENTINEL_MODEL_DIR, lkm_data/ next to this folder (repository root), lkm_data/ inside this folder."""
     env = os.environ.get("SENTINEL_MODEL_DIR")
     if env:
         return env
-    return os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lkm_data", "minilm", "onnx")
+    here = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    cands = [os.path.join(os.path.dirname(here), "lkm_data", "minilm", "onnx"), os.path.join(here, "lkm_data", "minilm", "onnx")]
+    for c in cands:
+        if os.path.exists(os.path.join(c, "model.onnx")):
+            return c
+    return cands[0]
 
 
 class Cortex:

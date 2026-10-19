@@ -57,7 +57,7 @@ It can see how your Wi-Fi is secured (open/WEP/old WPA), whether the access poin
 **This part is untested on Windows.** Everything else was run on Linux. The Windows pieces are the `netsh`/`arp`/`route`/`ipconfig` readers (their parsers are tested on sample text), the Task Scheduler installer, and the file locking call (`msvcrt`). Please try it and send me what breaks.
 
 ```powershell
-# from the repository folder, in a normal (non-admin) PowerShell
+# from the `guard_organism` folder, in a normal (non-admin) PowerShell
 powershell -ExecutionPolicy Bypass -File deploy\windows\install_sentinel.ps1
 ```
 
@@ -109,7 +109,7 @@ python -m sentinel.forge approve 1 --home DIR --by YOURNAME      # also: reject,
 ## 5. What was measured (Linux sandbox; none of it on a real Windows machine)
 
 * 151 tests pass (72 new: sensors against real processes, files and sockets; rules; reflex learning/persistence/anti-poisoning; service restart and crash; API and token; Forge validation and training; the Claude teacher against a local fake server; the static safety scan).
-* **Live drill in a sandbox**: real sensors, 2-second windows, 30-window childhood, then the drill. Result: *High: files being renamed in bulk (160 changes, 80 new extensions, 10 that look random)*, *High: python started with an encoded or hidden command* (with a request to end that PID, shown as text), *Medium: the machine is behaving unlike its usual self* (2.8x past the alarm line, with the three signals named). The loopback connection correctly raised nothing. The dashboard fits a phone (430 px, no sideways scroll); a screenshot of that run is `sentinel/dashboard_example.png`.
+* **Live drill in a sandbox**: real sensors, 2-second windows, 30-window childhood, then the drill. Result: *High: files being renamed in bulk (160 changes, 80 new extensions, 10 that look random)*, *High: python started with an encoded or hidden command* (with a request to end that PID, shown as text), *Medium: the machine is behaving unlike its usual self* (2.8x past the alarm line, with the three signals named). The loopback connection correctly raised nothing. The dashboard fits a phone (430 px, no sideways scroll); a screenshot of that run is `dashboard_example.png` in this folder.
 * **Reflex on a made-up normal machine** (synthetic, so this is a best case): false alarms on 0.37% of single windows (the service additionally needs two windows in a row, or one far past the line); recall on broad changes (bulk renames, scanning) 100%; on changes confined to a few of the 31 signals it is weaker (a large DNS burst: 74%; a 200x upload burst: 26%). That weakness is what the Forge is for.
 * **Forge on the same made-up machine** (4,000 windows of made-up history, so through the command line they would be stored as `demo` and could not be approved): ransomware, Wi-Fi/router, DNS and "new program phoning home" neurons each caught 100% of fresh synthetic threats with 0 false alarms on 1,000 test windows; for the Forge's DNS scenarios (smaller than the burst above) the reflex alone caught 1%, so the neuron added real coverage; for ransomware it added nothing over the reflex. The **data-exfiltration** neuron **failed the gate** (56% recall): with these 31 features a slow upload looks like heavy-tailed normal traffic. The gate said so instead of letting it in.
 * Not measured: real-machine false alarm rate (expect a noisy first week; use "It was fine"), the Claude API against the live service (only the fake server), live packet sniffing, anything on Windows.
