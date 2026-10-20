@@ -37,10 +37,13 @@ import numpy as np
 
 from sentinel.cortex import ConceptNeuron, NoveltyMemory, unit
 
-RAW = os.path.join("research_data", "raw")
-CACHE = os.path.join("research_data", "cache")
-OUT = os.path.join("research", "results")
-MODEL = os.path.join("lkm_data", "minilm", "onnx")
+from sentinel.cortex import default_model_dir
+
+HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))            # guard_organism/
+RAW = os.path.join(HERE, "research_data", "raw")                              # downloaded data (git-ignored)
+CACHE = os.path.join(HERE, "research_data", "cache")
+OUT = os.path.join(HERE, "research", "results")
+MODEL = default_model_dir()
 
 CONCEPTS = {
     "archive": ("compress files into an archive or extract files from an archive",

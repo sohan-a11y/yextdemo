@@ -8,7 +8,8 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-OUT = os.path.join("research", "results", "figures")
+HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+OUT = os.path.join(HERE, "research", "results", "figures")
 SURFACE, INK, INK2, GRID = "#fcfcfb", "#0b0b0b", "#52514e", "#e6e5e1"
 BLUE, ORANGE, AQUA, GRAY = "#2a78d6", "#eb6834", "#1baf7a", "#a9a8a2"      # validated light-mode slots 1-3; gray = reference
 
@@ -95,7 +96,7 @@ def per_concept(r):
 
 def main():
     os.makedirs(OUT, exist_ok=True)
-    r = json.load(open(os.path.join("research", "results", "instant_neurons.json")))
+    r = json.load(open(os.path.join(HERE, "research", "results", "instant_neurons.json")))
     bars(r, "auroc_unseen", "fig1_methods_auroc.png", "Recognising an activity on tools never shown", "AUROC (0.5 = chance) - mean over 20 concepts x 5 splits", (0.45, 1.0))
     bars(r, "tpr_unseen@0.01", "fig1b_methods_tpr.png", "Share caught when 1% false alarms are allowed", "true positive rate on tools never shown, alarm line set for 1% false alarms", (0.0, 0.75))
     per_concept(r)
